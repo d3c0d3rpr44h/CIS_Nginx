@@ -36,6 +36,6 @@ sudo echo "server {
        location / {
                try_files $uri $uri/ =404;
        }
-       }" >>  NginxApp
+       }" >  NginxApp
 sudo systemctl restart nginx
 echo "\nInitial Setup completed. Try accessing Ubuntu_IP:81; You should see Ngin                                                                                                                                   xApp Page\n"
