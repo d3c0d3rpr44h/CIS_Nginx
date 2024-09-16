@@ -22,7 +22,7 @@ sudo echo "<!doctype html>
 </body>
 </html>" > /var/www/NginxApp/index.html
 
-sudo echo "server {
+sudo echo 'server {
        listen 81;
        listen [::]:81;
 
@@ -34,6 +34,6 @@ sudo echo "server {
        location / {
                try_files $uri $uri/ =404;
        }
-       }" >  /etc/nginx/sites-enabled/NginxApp
+       }' >  /etc/nginx/sites-enabled/NginxApp
 sudo systemctl restart nginx
 echo "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81; You should see Nginx page. Enjoy!!"
