@@ -5,7 +5,7 @@
 #CIS Benchmark Details: https://downloads.cisecurity.org/#/
 
 #x.x.x - shows the section number along with the benchmark check
-
+#!/bin/bash
 #1.1.1- Ensure NGINX is installed (Automated)
 echo "Checking if nginx is installed \n"
 nginx -v
