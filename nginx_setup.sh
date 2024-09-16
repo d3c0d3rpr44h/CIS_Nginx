@@ -4,6 +4,7 @@ sudo apt update
 
 echo "\n######## Installing Nginx #########\n"
 sudo apt install nginx -y
+sudo apt auto-remove
 
 echo "\nTry opening Ubuntu_IP:80; You should see default Nginx Welcome Page\n"
 
@@ -38,4 +39,4 @@ sudo echo "server {
        }
        }" >  NginxApp
 sudo systemctl restart nginx
-echo "\nInitial Setup completed. Try accessing Ubuntu_IP:81; You should see Ngin                                                                                                                                   xApp Page\n"
+echo "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81; You should see Nginx page. Enjoy!!"
