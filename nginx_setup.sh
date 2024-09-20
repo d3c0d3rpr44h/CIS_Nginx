@@ -1,14 +1,14 @@
 #bin/bash
-echo "\n######## Updating package Repository ########\n"
+echo -e "\n######## Updating package Repository ########\n"
 sudo apt update
 
-echo "\n######## Installing Nginx ########\n"
+echo -e "\n######## Installing Nginx ########\n"
 sudo apt install nginx -y
 sudo apt auto-remove
 
-echo "\nTry opening Ubuntu_IP:80; You should see default Nginx Welcome Page\n"
+echo -e "\nTry opening Ubuntu_IP:80; You should see default Nginx Welcome Page\n"
 
-echo "\n######## Configuring your custom Nginx App -NginxApp ########\n"
+echo -e "\n######## Configuring your custom Nginx App -NginxApp ########\n"
 sudo mkdir /var/www/NginxApp
 sudo echo "<!doctype html>
 <html>
@@ -36,4 +36,4 @@ sudo echo 'server {
        }
        }' >  /etc/nginx/sites-enabled/NginxApp
 sudo systemctl restart nginx
-echo "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81; You should see Nginx page. Enjoy!!"
+echo -e "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81; You should see Nginx page. Enjoy!!"
