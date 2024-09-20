@@ -36,4 +36,4 @@ sudo echo 'server {
        }
        }' >  /etc/nginx/sites-enabled/NginxApp
 sudo systemctl restart nginx
-echo -e "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81; You should see Nginx page. Enjoy!!"
+echo -e "\nInitial Setup completed. \nTry accessing Ubuntu_IP:81. \nYou should see Nginx page. \nEnjoy!!"
