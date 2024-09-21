@@ -24,7 +24,7 @@ fi
 
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
-if ![["${OS}"=='Ubuntu']]
+if [[ ! "${OS}" == 'Ubuntu' ]]
 then
 	echo -ne "\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script\n"
 	exit 1
