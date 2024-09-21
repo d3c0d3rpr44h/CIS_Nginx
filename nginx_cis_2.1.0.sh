@@ -1,11 +1,38 @@
+#!/bin/bash
+
 #This Script audits your Nginx server configuration against CIS Security Benchmark 2.1.0 released 06-28-2024. 
 
 #Use Bash shell with sudo rights to execute.
 
+#This script is to be used if Nginx is running on - Ubuntu OS
+
 #CIS Benchmark Details: https://downloads.cisecurity.org/#/
 
 #x.x.x - shows the section number along with the benchmark check
-#!/bin/bash
+
+
+echo -ne "##### Running the Checker #####\n"
+
+#Check admin rights for script execution
+if [[ "${UID}" -ne 0 ]]
+then
+	echo "Please use sudo for script execution"
+	exit 1
+fi
+
+#Check if OS is Ubuntu based
+
+checkos() {
+OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
+if ![["${OS}"=='Ubuntu']]
+then
+	echo -ne "\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script\n"
+	exit 1
+fi
+}
+checkos
+
+
 #1.1.1- Ensure NGINX is installed (Automated)
 echo "Checking if nginx is installed \n"
 nginx -v
