@@ -46,11 +46,11 @@ pass=0
 fail=0
 
 passed() {
-pass=$pass+1
+((++pass))
 }
 
 failed() {
-++fail
+((++fail))
 }
 
 #1.1.1- Ensure NGINX is installed (Automated)
@@ -67,8 +67,7 @@ else
 	echo -e "Success\nNginx is installed"
 	passed
 fi
-echo $pass
-echo $fail
+
 #1.1.2 Ensure NGINX is installed from source (Manual) - To check if N/A since containerized
 #This section says Installing NGINX from source allows you to harden your instance of NGINX by
 #minimizing modules. NGINX is unable to remove modules when installed using a
