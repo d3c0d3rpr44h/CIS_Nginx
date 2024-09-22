@@ -16,7 +16,7 @@ echo -ne "\n########## Running the NGINX CIS Checker ##########"
 #Check admin rights for script execution
 
 checkid() {
-echo -e "\n\n##### Checking admin execution rights for NGINX CIS checker #####"
+echo -e "\n\n##### Checking admin execution rights #####"
 if [[ "${UID}" -ne 0 ]]
 then
 	echo "FAILURE\nPlease use sudo for script execution"
@@ -56,14 +56,13 @@ failed() {
 #1.1.1- Ensure NGINX is installed (Automated)
 echo -e "\nCIS 1.1.1 - Ensure NGINX is installed (Automated)"
 nginx -v 
-echo -n "$version"
 if  [[ "${?}" -ne 0 ]]
 then
-	echo -e "FAILURE\nNginx IS NOT installed on this server"
+	echo -e "FAILURE\nNginx is not installed on this server"
 	failed
 	exit 1
 else
-	echo -e "SUCCESS\nNginx IS installed"
+	echo -e "SUCCESS\nNginx is installed"
 	passed
 fi
 
@@ -80,10 +79,10 @@ echo -e "\nCIS 2.1.2 - Ensure HTTP WebDAV module is not installed (Automated)"
 nginx -V 2>&1 | grep http_dav_module > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
-        echo -e "SUCCESS\nhttp_dav_module IS NOT installed on this server"
+        echo -e "SUCCESS\nhttp_dav_module is not installed on this server"
         passed
 else
-        echo -e "FAILURE\nhttp_dav_module IS installed on this server"
+        echo -e "FAILURE\nhttp_dav_module is installed on this server"
         failed
 	echo -e "Remediation: NGINX does not support the removal of modules using the dnf method of installation. In order to remove modules from NGINX, you will need to compile NGINX from source. References: 1. http://nginx.org/en/docs/configure.html 2. https://tools.ietf.org/html/rfc4918"
 fi
@@ -93,10 +92,10 @@ echo -e "\nCIS 2.1.3 - Ensure modules with gzip functionality are disabled (Auto
 nginx -V 2>&1 | grep -E '(http_gzip_module|http_gzip_static_module)' > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
-        echo -e "SUCCESS\n GZIP IS NOT installed on this server"
+        echo -e "SUCCESS\n GZIP is not installed on this server"
         passed
 else
-        echo -e "FAILURE\nGZIP IS installed on this server"
+        echo -e "FAILURE\nGZIP is installed on this server"
         failed
         echo -e "Remediation: In order to disable the http_gzip_module and the http_gzip_static_module, NGINX must be recompiled from source. This can be accomplished using the below command in the folder you used during your original compilation. This must be done without the --withhttp_gzip_static_module or --with-http_gzip_module configuration directives. ./configure --without-http_gzip_module --without-http_gzip_static_module. Default Value: The http_gzip_module is enabled by default in the source build, and the http_gzip_static_module is not. Only the http_gzip_static_module is enabled by default in the dnf package. References: 1. http://nginx.org/en/docs/configure.html 2. http://nginx.org/en/docs/configure.html 3. http://nginx.org/en/docs/http/ngx_http_gzip_module.html 4. http://nginx.org/en/docs/http/ngx_http_gzip_static_module.html"
 fi
