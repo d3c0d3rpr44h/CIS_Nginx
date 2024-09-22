@@ -11,46 +11,77 @@
 #x.x.x - shows the section number along with the benchmark check
 
 
-echo -ne "##### Running the Checker #####\n"
+echo -ne "\n########## Running the NGINX CIS Checker ##########"
 
 #Check admin rights for script execution
 
 checkid() {
+echo -e "\n\n##### Checking admin execution rights for CIS checker #####"
 if [[ "${UID}" -ne 0 ]]
 then
-	echo "Please use sudo for script execution"
+	echo "Failed\nPlease use sudo for script execution"
 	exit 1
+else
+	echo -ne "Success"
 fi
 }
 checkid
 
 #Check if OS is Ubuntu based
-
+echo -e "\n\n##### Checking if OS is Ubuntu #####"
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
 then
-	echo -ne "\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script\n"
+	echo -e "Failed\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
 	exit 1
+else
+	echo -e "Success"
 fi
 }
 checkos
 
+echo -e "\n##### Starting the CIS checks ######"
+pass=0
+fail=0
+
+passed() {
+pass=$pass+1
+}
+
+failed() {
+++fail
+}
 
 #1.1.1- Ensure NGINX is installed (Automated)
-echo -ne "Checking if nginx is installed \n"
+echo -e "\nCIS 1.1.1 - Ensure NGINX is installed (Automated)"
 nginx -v 
-
+echo -n "$version"
+if  [[ "${?}" -ne 0 ]]
+then
+	echo -e "Failure\nNginx is NOT installed on this server"
+	failed
+	echo -e "CIS Checker Results : $pass/100"
+	exit 1
+else
+	echo -e "Success\nNginx is installed"
+	passed
+fi
+echo $pass
+echo $fail
 #1.1.2 Ensure NGINX is installed from source (Manual) - To check if N/A since containerized
 #This section says Installing NGINX from source allows you to harden your instance of NGINX by
 #minimizing modules. NGINX is unable to remove modules when installed using a
 #package manager. By installing from source, you are able to minimize modules
 
+
 #To verify package manager repositories are configured correctly
+echo "\nCIS 1.1.2 - Ensure NGINX is installed from source (Manual)"
 dnf repolist -v nginx-stable
 
 #To verify your NGINX package is up to date
 dnf info nginx
+
 
 #To install the latest NGINX package
 dnf update nginx -y
