@@ -14,17 +14,21 @@
 echo -ne "##### Running the Checker #####\n"
 
 #Check admin rights for script execution
+
+checkid() {
 if [[ "${UID}" -ne 0 ]]
 then
 	echo "Please use sudo for script execution"
 	exit 1
 fi
+}
+checkid
 
 #Check if OS is Ubuntu based
 
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
-if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') ]]
+if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
 then
 	echo -ne "\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script\n"
 	exit 1
@@ -34,8 +38,8 @@ checkos
 
 
 #1.1.1- Ensure NGINX is installed (Automated)
-echo "Checking if nginx is installed \n"
-nginx -v
+echo -ne "Checking if nginx is installed \n"
+nginx -v 
 
 #1.1.2 Ensure NGINX is installed from source (Manual) - To check if N/A since containerized
 #This section says Installing NGINX from source allows you to harden your instance of NGINX by
