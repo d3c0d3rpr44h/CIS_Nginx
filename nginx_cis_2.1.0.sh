@@ -118,6 +118,8 @@ groups nginx
 #Verify the nginx service account is locked
 passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -
 r 's/;.*//g')"
+egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
+egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
 
 #To verify the nginx service account has an invalid shell
 
