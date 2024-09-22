@@ -16,13 +16,13 @@ echo -ne "\n########## Running the NGINX CIS Checker ##########"
 #Check admin rights for script execution
 
 checkid() {
-echo -e "\n\n##### Checking admin execution rights for CIS checker #####"
+echo -e "\n\n##### Checking admin execution rights for NGINX CIS checker #####"
 if [[ "${UID}" -ne 0 ]]
 then
-	echo "Failed\nPlease use sudo for script execution"
+	echo "FAILURE\nPlease use sudo for script execution"
 	exit 1
 else
-	echo -ne "Success"
+	echo -ne "SUCCESS"
 fi
 }
 checkid
@@ -33,15 +33,15 @@ checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
 then
-	echo -e "Failed\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
+	echo -e "FAILURE\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
 	exit 1
 else
-	echo -e "Success"
+	echo -e "SUCCESS"
 fi
 }
 checkos
 
-echo -e "\n##### Starting the CIS checks ######"
+echo -e "\n##### Analyzing the Server for CIS Benchmarks ######"
 pass=0
 fail=0
 
@@ -59,42 +59,51 @@ nginx -v
 echo -n "$version"
 if  [[ "${?}" -ne 0 ]]
 then
-	echo -e "Failure\nNginx is NOT installed on this server"
+	echo -e "FAILURE\nNginx IS NOT installed on this server"
 	failed
-	echo -e "CIS Checker Results : $pass/100"
 	exit 1
 else
-	echo -e "Success\nNginx is installed"
+	echo -e "SUCCESS\nNginx IS installed"
 	passed
 fi
 
-#1.1.2 Ensure NGINX is installed from source (Manual) - To check if N/A since containerized
-#This section says Installing NGINX from source allows you to harden your instance of NGINX by
-#minimizing modules. NGINX is unable to remove modules when installed using a
-#package manager. By installing from source, you are able to minimize modules
+#1.1.2 Ensure NGINX is installed from source (Manual)
+
+#1.2.1 Ensure package manager repositories are properly configured (Manual)
+
+#1.2.2 Ensure the latest software package is installed (Manual)
+
+#2.1.1 Ensure only required modules are installed (Manual)
+
+#2.1.2 Ensure HTTP WebDAV module is not installed (Automated)
+echo -e "\nCIS 2.1.2 - Ensure HTTP WebDAV module is not installed (Automated)"
+nginx -V 2>&1 | grep http_dav_module > /dev/null
+if  [[ "${?}" -ne 0 ]]
+then
+        echo -e "SUCCESS\nhttp_dav_module IS NOT installed on this server"
+        passed
+else
+        echo -e "FAILURE\nhttp_dav_module IS installed on this server"
+        failed
+	echo -e "Remediation: NGINX does not support the removal of modules using the dnf method of installation. In order to remove modules from NGINX, you will need to compile NGINX from source. References: 1. http://nginx.org/en/docs/configure.html 2. https://tools.ietf.org/html/rfc4918"
+fi
+
+#2.1.3 Ensure modules with gzip functionality are disabled (Automated)
+echo -e "\nCIS 2.1.3 - Ensure modules with gzip functionality are disabled (Automated)"
+nginx -V 2>&1 | grep -E '(http_gzip_module|http_gzip_static_module)' > /dev/null
+if  [[ "${?}" -ne 0 ]]
+then
+        echo -e "SUCCESS\n GZIP IS NOT installed on this server"
+        passed
+else
+        echo -e "FAILURE\nGZIP IS installed on this server"
+        failed
+        echo -e "Remediation: In order to disable the http_gzip_module and the http_gzip_static_module, NGINX must be recompiled from source. This can be accomplished using the below command in the folder you used during your original compilation. This must be done without the --withhttp_gzip_static_module or --with-http_gzip_module configuration directives. ./configure --without-http_gzip_module --without-http_gzip_static_module. Default Value: The http_gzip_module is enabled by default in the source build, and the http_gzip_static_module is not. Only the http_gzip_static_module is enabled by default in the dnf package. References: 1. http://nginx.org/en/docs/configure.html 2. http://nginx.org/en/docs/configure.html 3. http://nginx.org/en/docs/http/ngx_http_gzip_module.html 4. http://nginx.org/en/docs/http/ngx_http_gzip_static_module.html"
+fi
 
 
-#To verify package manager repositories are configured correctly
-echo "\nCIS 1.1.2 - Ensure NGINX is installed from source (Manual)"
-dnf repolist -v nginx-stable
-
-#To verify your NGINX package is up to date
-dnf info nginx
-
-
-#To install the latest NGINX package
-dnf update nginx -y
-
-#Audit the modules used in your current NGINX build
-nginx -V
-
-#To ensure the http_dav_module is not installed
-nginx -V 2>&1 | grep http_dav_module
-
-# to ensure gzip modules are not installed
-nginx -V 2>&1 | grep -E '(http_gzip_module|http_gzip_static_module)'
-
-#To determine if the autoindex module is disabled
+#2.1.4 Ensure the autoindex module is disabled (Automated)
+echo -e "\nCIS 2.1.4 - Ensure the autoindex module is disabled (Automated)"
 egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
 egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/* 
 
