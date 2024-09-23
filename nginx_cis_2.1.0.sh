@@ -19,7 +19,7 @@ checkid() {
 echo -e "\n\n##### Checking admin execution rights #####"
 if [[ "${UID}" -ne 0 ]]
 then
-	echo -n "FAILURE\nPlease use sudo for script execution"
+	echo -e "FAILURE\nPlease use sudo for script execution"
 	exit 1
 else
 	echo -ne "SUCCESS"
@@ -106,124 +106,151 @@ echo -e "\nCIS 2.1.4 - Ensure the autoindex module is disabled (Automated)"
 egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
 egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/* 
 
-#Verify nginx is being run as a dedicated user
+#2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)
+echo -e "\nCIS - 2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)
 grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf
-
-#Verify the nginx dedicated user is not privileged
 sudo -l -U nginx
-
-#Verify the nginx dedicated user is not part of any unexpected groups
 groups nginx
 
-#Verify the nginx service account is locked
+#2.2.2 Ensure the NGINX service account is locked (Automated)
+echo -e "\nCIS - 2.2.2 Ensure the NGINX service account is locked (Automated)
 passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -
 r 's/;.*//g')"
-egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
-egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
 
-#To verify the nginx service account has an invalid shell
+#2.2.3 Ensure the NGINX service account has an invalid shell (Automated)
+echo -e "\nCIS - 2.2.3 Ensure the NGINX service account has an invalid shell (Automated)"
+shell()
+{
+ l_output="" l_output2="" l_out=""
+ if [ -f /etc/nginx/nginx.conf ]; then
+ l_user="$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf |
+sed -r 's/;.*//g')"
+ l_valid_shells="^($( sed -rn '/^\//{s,/,\\\\/,g;p}' /etc/shells | paste
+-s -d '|' - ))$"
+ l_out="$(awk -v pat="$l_valid_shells" -v ngusr="$l_user" -F: '($(NF) ~
+pat && $1==ngusr) { $(NF-1) }' /etc/passwd)"
+ if [ -z "$l_out" ]; then
+ l_output=" - NGINX user account: \"$l_user\" has an invalid shell"
+ else
+ l_output2=" - NGINX user account: \"$l_user\" has a valid shell:
+\"$l_out\""
+ fi
+ else
+ l_output2=" - NGINX user account can not be determined.\n - file:
+\"/etc/nginx/nginx.conf\" is missing"
+ fi
+ if [ -z "$l_output2" ]; then
+ echo -e "\n- Audit Result:\n ** PASS **\n$l_output\n"
+ else
+ echo -e "\n- Audit Result:\n ** FAIL **\n - Reason(s) for audit
+failure:\n$l_output2\n"
+ fi
+}
+shell
 
-#To verify the ownership of the nginx configuration files
+#2.3.1 Ensure NGINX directories and files are owned by root (Automated)
+echo -e "\nCIS - 2.3.1 Ensure NGINX directories and files are owned by root (Automated)"
 stat /etc/nginx
 
-#To verify the nginx directory has other write permissions revoked
+#2.3.2 Ensure access to NGINX directories and files is restricted (Automated)
+echo -e "\nCIS - 2.3.2 Ensure access to NGINX directories and files is restricted (Automated)"
 find /etc/nginx -type d -exec stat -Lc "%n %a" {} +
-
-#To verify the nginx configuration files have other read, write and execute permissions revoked
 find /etc/nginx -type f -exec stat -Lc "%n %a" {} +
 
-#To verify the ownership and permissions of the nginx PID file
+#2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)
+echo -e "\nCIS - 2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)"
 stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
 
-#To verify the core dump configuration is secured
-grep working_directory /etc/nginx/nginx.conf
+#2.3.4 Ensure the core dump directory is secured (Manual)
 
-#To audit all listening ports on the server:
-grep -ir "listen[^;]*;" /etc/nginx
+#2.4.1 Ensure NGINX only listens for network connections on authorized ports (Manual)
 
-#To check which files are included in the nginx configuration file
-grep include /etc/nginx/nginx.conf
-
-#To verify host config
+#2.4.2 Ensure requests for unknown host names are rejected (Automated)
+echo -e "\nCIS -2.4.2 Ensure requests for unknown host names are rejected (Automated)"
 curl -k -v https://127.0.0.1 -H 'Host: invalid.host.com'
 
-#To check the current setting for the keepalive_timeout directive
+#2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)
+echo -e "\nCIS - 2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
 grep -ir keepalive_timeout /etc/nginx
 
-#To check the current setting for the send_timeout directive
+#2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
+echo -e "\nCIS - 2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
 grep -ir send_timeout /etc/nginx
 
-#verify the server_tokens directive is set to off
+#2.5.1 Ensure server_tokens directive is set to `off` (Automated)
+echo -e "\nCIS - 2.5.1 Ensure server_tokens directive is set to `off` (Automated)"
 curl -I 127.0.0.1 | grep -i server
 
-#To Locate the error page and index directives in the location block of your server config
+#2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
+echo -e "\nCIS - 2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)"
 grep -i nginx /usr/share/nginx/html/index.html
 grep -i nginx /usr/share/nginx/html/50x.html
 
-#To verify hidden files are disabled
-grep location /etc/nginx/nginx.conf
+#2.5.3 Ensure hidden file serving is disabled (Manual)
 
-#To Confirm that the headers are denied as part of the location block of the nginx config
+#2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)
+echo -e "\nCIS - 2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
 grep proxy_hide_header /etc/nginx/nginx.conf
 
-#To Verify your log format meets standards
+#3.1 Ensure detailed logging is enabled (Manual)
 
-#To verify access logging is enabled
-grep -ir access_log /etc/nginx
+#3.2 Ensure access logging is enabled (Manual)
 
-#To verify the error logging configuration
+#3.3 Ensure error logging is enabled and set to the info logging level (Automated)
+echo -e "\nCIS - 3.3 Ensure error logging is enabled and set to the info logging level (Automated)"
 grep error_log /etc/nginx/nginx.conf
 
-#To verify the log rotation configuration
+#3.4 Ensure log files are rotated (Automated)
+echo -e "\nCIS - 3.4 Ensure log files are rotated (Automated)"
 cat /etc/logrotate.d/nginx | grep weekly
 cat /etc/logrotate.d/nginx | grep rotate
 
-#To verify your server is configured for central logging
-grep -ir syslog /etc/nginx
+#3.5 Ensure error logs are sent to a remote syslog server (Manual)
 
+#3.6 Ensure access logs are sent to a remote syslog server (Manual)
 
-#to ensure the client IP address is passed to the endpoint the proxy is serving traffic to
-proxy_set_header X-Real-IP $remote_addr;
-proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#3.7 Ensure proxies pass source IP information (Manual)
 
-#To verify your server listening configuration
+#4.1.1 Ensure HTTP is redirected to HTTPS (Manual)
 
-#To find the file location of your certificate
-grep -ir ssl_certificate /etc/nginx/
+#4.1.2 Ensure a trusted certificate and trust chain is installed (Manual)
 
-#To Verify the permissions on the key file are 400
+#4.1.3 Ensure private key permissions are restricted (Automated)
+echo -e "\nCIS - 4.1.3 Ensure private key permissions are restricted (Automated)"
 find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} +
 
-#To verify which SSL/TLS protocols
+#4.1.4 Ensure only modern TLS protocols are used (Automated)
+echo -e "\nCIS - 4.1.4 Ensure only modern TLS protocols are used (Automated)"
 grep -ir ssl_protocol /etc/nginx
 
-#To verify the ssl_cipher and proxy_ssl_cipher directives meet standards
-grep -ir ssl_ciphers /etc/nginx/
-grep -ir proxy_ssl_ciphers /etc/nginx
+#4.1.5 Disable weak ciphers (Manual)
 
-#To Verify the option ssl_dhparam is explicitly provided
+#4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)
+echo -e "\nCIS - 4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)"
 grep ssl_dhparam /etc/nginx/nginx.conf
 
-#To verify OCSP stapling is enabled
+#4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)
+echo -e "\nCIS - 4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
 grep -ir ssl_stapling /etc/nginx
 
-#To check for HSTS headers
+#4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)
+echo -e "\nCIS - 4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
 grep -ir Strict-Transport-Security /etc/nginx
 
-#To Verify upstream server traffic is authenticated with a client certificate
+#4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)
+echo -e "\nCIS - 4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)"
 grep -ir proxy_ssl_certificate /etc/nginx
 
-#To Ensure the upstream traffic server certificate is trusted
-grep -ir proxy_ssl_trusted_certificate /etc/nginx
-grep -ir proxy_ssl_verify /etc/nginx
+#4.1.10 Ensure the upstream traffic server certificate is trusted (Manual)
 
+#4.1.11 Ensure your domain is preloaded (Manual)
 
-#To Ensure your domain is preloaded
-
-#4.1.12 Ensure session resumption is disabled to enable perfect forward security
+#4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)
+echo -e "\nCIS - 4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir ssl_session_tickets /etc/nginx
 
-#4.1.13 Ensure HTTP/2.0 is used
+#4.1.13 Ensure HTTP/2.0 is used (Automated)
+echo -e "\nCIS - 4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir http2 /etc/nginx
 
 #4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged
