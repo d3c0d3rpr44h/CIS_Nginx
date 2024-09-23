@@ -107,18 +107,17 @@ egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
 egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/* 
 
 #2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)
-echo -e "\nCIS - 2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)
+echo -e "\nCIS 2.2.1 - Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)"
 grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf
 sudo -l -U nginx
 groups nginx
 
 #2.2.2 Ensure the NGINX service account is locked (Automated)
-echo -e "\nCIS - 2.2.2 Ensure the NGINX service account is locked (Automated)
-passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -
-r 's/;.*//g')"
+echo -e "\nCIS 2.2.2 - Ensure the NGINX service account is locked (Automated)"
+passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')"
 
 #2.2.3 Ensure the NGINX service account has an invalid shell (Automated)
-echo -e "\nCIS - 2.2.3 Ensure the NGINX service account has an invalid shell (Automated)"
+echo -e "\nCIS 2.2.3 - Ensure the NGINX service account has an invalid shell (Automated)"
 shell()
 {
  l_output="" l_output2="" l_out=""
@@ -149,16 +148,16 @@ failure:\n$l_output2\n"
 shell
 
 #2.3.1 Ensure NGINX directories and files are owned by root (Automated)
-echo -e "\nCIS - 2.3.1 Ensure NGINX directories and files are owned by root (Automated)"
+echo -e "\nCIS 2.3.1 - Ensure NGINX directories and files are owned by root (Automated)"
 stat /etc/nginx
 
 #2.3.2 Ensure access to NGINX directories and files is restricted (Automated)
-echo -e "\nCIS - 2.3.2 Ensure access to NGINX directories and files is restricted (Automated)"
+echo -e "\nCIS 2.3.2 - Ensure access to NGINX directories and files is restricted (Automated)"
 find /etc/nginx -type d -exec stat -Lc "%n %a" {} +
 find /etc/nginx -type f -exec stat -Lc "%n %a" {} +
 
 #2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)
-echo -e "\nCIS - 2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)"
+echo -e "\nCIS 2.3.3 - Ensure the NGINX process ID (PID) file is secured (Automated)"
 stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
 
 #2.3.4 Ensure the core dump directory is secured (Manual)
@@ -166,30 +165,30 @@ stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
 #2.4.1 Ensure NGINX only listens for network connections on authorized ports (Manual)
 
 #2.4.2 Ensure requests for unknown host names are rejected (Automated)
-echo -e "\nCIS -2.4.2 Ensure requests for unknown host names are rejected (Automated)"
+echo -e "\nCIS 2.4.2 - Ensure requests for unknown host names are rejected (Automated)"
 curl -k -v https://127.0.0.1 -H 'Host: invalid.host.com'
 
 #2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)
-echo -e "\nCIS - 2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
+echo -e "\nCIS 2.4.3 - Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
 grep -ir keepalive_timeout /etc/nginx
 
 #2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
-echo -e "\nCIS - 2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
+echo -e "\nCIS 2.4.4 - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
 grep -ir send_timeout /etc/nginx
 
 #2.5.1 Ensure server_tokens directive is set to `off` (Automated)
-echo -e "\nCIS - 2.5.1 Ensure server_tokens directive is set to `off` (Automated)"
+echo -e "\nCIS 2.5.1 - Ensure server_tokens directive is set to `off` (Automated)"
 curl -I 127.0.0.1 | grep -i server
 
 #2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
-echo -e "\nCIS - 2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)"
+echo -e "\nCIS 2.5.2 - Ensure default error and index.html pages do not reference NGINX (Automated)"
 grep -i nginx /usr/share/nginx/html/index.html
 grep -i nginx /usr/share/nginx/html/50x.html
 
 #2.5.3 Ensure hidden file serving is disabled (Manual)
 
 #2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)
-echo -e "\nCIS - 2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
+echo -e "\nCIS 2.5.4 - Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
 grep proxy_hide_header /etc/nginx/nginx.conf
 
 #3.1 Ensure detailed logging is enabled (Manual)
@@ -197,11 +196,11 @@ grep proxy_hide_header /etc/nginx/nginx.conf
 #3.2 Ensure access logging is enabled (Manual)
 
 #3.3 Ensure error logging is enabled and set to the info logging level (Automated)
-echo -e "\nCIS - 3.3 Ensure error logging is enabled and set to the info logging level (Automated)"
+echo -e "\nCIS 3.3 - Ensure error logging is enabled and set to the info logging level (Automated)"
 grep error_log /etc/nginx/nginx.conf
 
 #3.4 Ensure log files are rotated (Automated)
-echo -e "\nCIS - 3.4 Ensure log files are rotated (Automated)"
+echo -e "\nCIS 3.4 - Ensure log files are rotated (Automated)"
 cat /etc/logrotate.d/nginx | grep weekly
 cat /etc/logrotate.d/nginx | grep rotate
 
@@ -216,29 +215,29 @@ cat /etc/logrotate.d/nginx | grep rotate
 #4.1.2 Ensure a trusted certificate and trust chain is installed (Manual)
 
 #4.1.3 Ensure private key permissions are restricted (Automated)
-echo -e "\nCIS - 4.1.3 Ensure private key permissions are restricted (Automated)"
+echo -e "\nCIS 4.1.3 - Ensure private key permissions are restricted (Automated)"
 find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} +
 
 #4.1.4 Ensure only modern TLS protocols are used (Automated)
-echo -e "\nCIS - 4.1.4 Ensure only modern TLS protocols are used (Automated)"
+echo -e "\nCIS 4.1.4 - Ensure only modern TLS protocols are used (Automated)"
 grep -ir ssl_protocol /etc/nginx
 
 #4.1.5 Disable weak ciphers (Manual)
 
 #4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)
-echo -e "\nCIS - 4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)"
+echo -e "\nCIS 4.1.6 - Ensure custom Diffie-Hellman parameters are used (Automated)"
 grep ssl_dhparam /etc/nginx/nginx.conf
 
 #4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)
-echo -e "\nCIS - 4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
+echo -e "\nCIS 4.1.7 - Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
 grep -ir ssl_stapling /etc/nginx
 
 #4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)
-echo -e "\nCIS - 4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
+echo -e "\nCIS 4.1.8 - Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
 grep -ir Strict-Transport-Security /etc/nginx
 
 #4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)
-echo -e "\nCIS - 4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)"
+echo -e "\nCIS 4.1.9 - Ensure upstream server traffic is authenticated with a client certificate (Automated)"
 grep -ir proxy_ssl_certificate /etc/nginx
 
 #4.1.10 Ensure the upstream traffic server certificate is trusted (Manual)
@@ -246,45 +245,48 @@ grep -ir proxy_ssl_certificate /etc/nginx
 #4.1.11 Ensure your domain is preloaded (Manual)
 
 #4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)
-echo -e "\nCIS - 4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)"
+echo -e "\nCIS 4.1.12 - Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir ssl_session_tickets /etc/nginx
 
 #4.1.13 Ensure HTTP/2.0 is used (Automated)
-echo -e "\nCIS - 4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)"
+echo -e "\nCIS 4.1.12 - Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir http2 /etc/nginx
 
-#4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged
+#4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)
+echo -e "\nCIS 4.1.14 - Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)"
 grep -ir ssl_ciphers /etc/nginx/
 grep -ir proxy_ssl_ciphers /etc/nginx
 
-#5.1.1 Ensure allow and deny filters limit access to specific IP addresses
+#5.1.1 Ensure allow and deny filters limit access to specific IP addresses (Manual)
 
-#5.1.2 Ensure only approved HTTP methods are allowed
-curl -X DELETE http://localhost/index.html
-curl -X GET http://localhost/index.html
+#5.1.2 Ensure only approved HTTP methods are allowed (Manual)
 
-#5.2.1 Ensure timeout values for reading the client header and body are set correctly
+#5.2.1 Ensure timeout values for reading the client header and body are set correctly (Automated)
+echo -e "\nCIS - 5.2.1 Ensure timeout values for reading the client header and body are set correctly (Automated)"
 grep -ir timeout /etc/nginx
 
-#5.2.2 Ensure the maximum request body size is set correctly
+#5.2.2 Ensure the maximum request body size is set correctly (Automated)
+echo -e "\nCIS 5.2.2 - Ensure the maximum request body size is set correctly (Automated)"
 grep -ir client_max_body_size /etc/nginx
 
-#5.2.3 Ensure the maximum buffer size for URIs is defined
+#5.2.3 Ensure the maximum buffer size for URIs is defined (Automated)
+echo -e "\nCIS 5.2.3 - Ensure the maximum buffer size for URIs is defined (Automated)"
 grep -ir large_client_header_buffers /etc/nginx/
 
-#5.2.4 Ensure the number of connections per IP address is limited
-#5.2.5 Ensure rate limits by IP address are set
+#5.2.4 Ensure the number of connections per IP address is limited (Manual)
 
-#5.3.1 Ensure X-Frame-Options header is configured and enabled
+#5.2.5 Ensure rate limits by IP address are set (Manual)
+
+#5.3.1 Ensure X-Frame-Options header is configured and enabled (Automated)
+echo -e "\nCIS 5.3.1 - Ensure X-Frame-Options header is configured and enabled (Automated)"
 grep -ir X-Frame-Options /etc/nginx
 
-#5.3.2 Ensure X-Content-Type-Options header is configured and enabled
+#5.3.2 Ensure X-Content-Type-Options header is configured and enabled (Automated)
+echo -e "\nCIS 5.3.2 - Ensure X-Content-Type-Options header is configured and enabled (Automated)"
 grep -ir X-Content-Type-Options /etc/nginx
 
-#5.3.3 Ensure that Content Security Policy (CSP) is enabled and configured properly
-grep -ir Content-Security-Policy /etc/nginx
+#5.3.3 Ensure that Content Security Policy (CSP) is enabled and configured properly (Manual)
 
-#5.3.4 Ensure the Referrer Policy is enabled and configured properly
-grep -r Referrer-Policy /etc/nginx
+#5.3.4 Ensure the Referrer Policy is enabled and configured properly (Manual)
 
 
