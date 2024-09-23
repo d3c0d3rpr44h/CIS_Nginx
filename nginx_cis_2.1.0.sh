@@ -53,6 +53,11 @@ failed() {
 ((++fail))
 }
 
+score(){
+total=$((pass+fail))
+echo -e "Your CIS Score for this server: $pass/$total"
+}
+
 #1.1.1- Ensure NGINX is installed (Automated)
 echo -e "\nCIS 1.1.1 - Ensure NGINX is installed (Automated)"
 nginx -v 
@@ -289,4 +294,4 @@ grep -ir X-Content-Type-Options /etc/nginx
 
 #5.3.4 Ensure the Referrer Policy is enabled and configured properly (Manual)
 
-
+score
