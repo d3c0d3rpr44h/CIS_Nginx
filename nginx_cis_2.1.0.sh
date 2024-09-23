@@ -19,7 +19,7 @@ checkid() {
 echo -e "\n\n##### Checking admin execution rights #####"
 if [[ "${UID}" -ne 0 ]]
 then
-	echo "FAILURE\nPlease use sudo for script execution"
+	echo -n "FAILURE\nPlease use sudo for script execution"
 	exit 1
 else
 	echo -ne "SUCCESS"
