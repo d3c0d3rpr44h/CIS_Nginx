@@ -55,7 +55,7 @@ failed() {
 
 score(){
 total=$((pass+fail))
-echo -e "Your CIS Score for this server: $pass/$total"
+echo -e "\nYour CIS Score for this server: $pass/$total"
 }
 
 #1.1.1- Ensure NGINX is installed (Automated)
