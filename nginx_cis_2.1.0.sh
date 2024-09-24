@@ -11,12 +11,12 @@
 #x.x.x - shows the section number along with the benchmark check
 
 
-echo -ne "\n########## Running the NGINX CIS Checker ##########"
+echo -ne "\n\e[4m########## Running the NGINX CIS Checker ##########\e[0m"
 
 #Check admin rights for script execution
 
 checkid() {
-echo -e "\n\n##### Checking admin execution rights #####"
+echo -e "\n\n\e[4m##### Checking admin execution rights #####\e[0m"
 if [[ "${UID}" -ne 0 ]]
 then
 	echo -e "FAILURE\nPlease use sudo for script execution"
@@ -28,7 +28,7 @@ fi
 checkid
 
 #Check if OS is Ubuntu based
-echo -e "\n\n##### Checking if OS is Ubuntu #####"
+echo -e "\n\n\e[4m##### Checking if OS is Ubuntu #####\e[0m"
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
@@ -41,7 +41,7 @@ fi
 }
 checkos
 
-echo -e "\n##### Analyzing the Server for CIS Benchmarks ######"
+echo -e "\n\e[4m##### Analyzing the Nginx Server against CIS Benchmarks ######\e[0m"
 pass=0
 fail=0
 
@@ -55,11 +55,13 @@ failed() {
 
 score(){
 total=$((pass+fail))
-echo -e "\nYour CIS Score for this server: $pass/$total"
+percent=$((pass*100/total))
+echo -e "\n\e[4mCIS Compliance Checks Passed\e[0m: $pass/$total"
+echo -e "\e[4mCIS Compliance Percentage\e[0m: $percent%"
 }
 
 #1.1.1- Ensure NGINX is installed (Automated)
-echo -e "\nCIS 1.1.1 - Ensure NGINX is installed (Automated)"
+echo -e "\n\e[4mCIS 1.1.1\e[0m - Ensure NGINX is installed (Automated)"
 nginx -v 
 if  [[ "${?}" -ne 0 ]]
 then
@@ -80,7 +82,7 @@ fi
 #2.1.1 Ensure only required modules are installed (Manual)
 
 #2.1.2 Ensure HTTP WebDAV module is not installed (Automated)
-echo -e "\nCIS 2.1.2 - Ensure HTTP WebDAV module is not installed (Automated)"
+echo -e "\n\e[4mCIS 2.1.2\e[0m - Ensure HTTP WebDAV module is not installed (Automated)"
 nginx -V 2>&1 | grep http_dav_module > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
@@ -93,7 +95,7 @@ else
 fi
 
 #2.1.3 Ensure modules with gzip functionality are disabled (Automated)
-echo -e "\nCIS 2.1.3 - Ensure modules with gzip functionality are disabled (Automated)"
+echo -e "\n\e[4mCIS 2.1.3\e[0m - Ensure modules with gzip functionality are disabled (Automated)"
 nginx -V 2>&1 | grep -E '(http_gzip_module|http_gzip_static_module)' > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
@@ -107,22 +109,59 @@ fi
 
 
 #2.1.4 Ensure the autoindex module is disabled (Automated)
-echo -e "\nCIS 2.1.4 - Ensure the autoindex module is disabled (Automated)"
-egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf
-egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/* 
+echo -e "\n\e[4mCIS 2.1.4\e[0m - Ensure the autoindex module is disabled (Automated)"
+a=$(egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf)
+b=$(egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/*)
+if  [[ ( "$a" == 'autoindex on' ) || ( "$b" == 'autoindex on' ) ]]
+then
+        echo -e "FAILURE\nautoindex is not disabled on this server"
+        failed
+        echo -e "Remediation: Search the NGINX configuration files (nginx.conf and any included configuration files) to find autoindex directives. Set the value for all autoindex directives to off, or remove those directives. References: 1. http://nginx.org/en/docs/http/ngx_http_autoindex_module.html"
+else
+        echo -e "SUCCESS\nautoindex is disabled on this server"
+        passed
+fi
 
 #2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)
-echo -e "\nCIS 2.2.1 - Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)"
-grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf
-sudo -l -U nginx
-groups nginx
+echo -e "\n\e[4mCIS 2.2.1\e[0m - Ensure that NGINX is run using a non-privileged, dedicated service account (Automated)"
+user=$(grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf | cut -d ' ' -f 2 | cut -d ';' -f 1)
+a=$(sudo -l -U $user)
+if  [[ "$a" =~ 'not allowed' ]]
+then
+        echo -e "SUCCESS\nnginx service is running with non-sudo user privilege on this server"
+        passed
+else
+	echo -e "FAILURE\nginx service is running with sudo user privilege on this server"
+	failed
+	echo -e "Remediation: Add a system account for the nginx user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
+fi
+
+b=$(groups $user | cut -d ':' -f 1)
+c=$(groups $user | cut -d ':' -f 2 | cut -d ' ' -f 2)
+if [[ ( "$b" == "$c ") ]]
+then
+	echo -e "SUCCESS\nnginx service user is not part of any other groups than the primary user group"
+	passed
+else
+	echo -e "FAILURE\nnginx service user is part of other groups than the primary user group $b: $c"
+	failed
+	echo -e "Remediation: Add a system account for the nginx user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value:By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
+fi
 
 #2.2.2 Ensure the NGINX service account is locked (Automated)
-echo -e "\nCIS 2.2.2 - Ensure the NGINX service account is locked (Automated)"
-passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')"
-
+echo -e "\n\e[4mCIS 2.2.2\e[0m - Ensure the NGINX service account is locked (Automated)"
+a=$(passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')")
+if  [[ "$a" =~ 'Password locked' ]]
+then
+        echo -e "SUCCESS\nNGINX service account is locked"
+        passed
+else
+        echo -e "FAILURE\nNGINX service account is not locked"
+        failed
+	echo -e "Remediation: Use the passwd command to lock the nginx service account: passwd -l "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')""
+fi
 #2.2.3 Ensure the NGINX service account has an invalid shell (Automated)
-echo -e "\nCIS 2.2.3 - Ensure the NGINX service account has an invalid shell (Automated)"
+echo -e "\n\e[4mCIS 2.2.3\e[0m - Ensure the NGINX service account has an invalid shell (Automated)"
 shell()
 {
  l_output="" l_output2="" l_out=""
@@ -153,16 +192,16 @@ failure:\n$l_output2\n"
 shell
 
 #2.3.1 Ensure NGINX directories and files are owned by root (Automated)
-echo -e "\nCIS 2.3.1 - Ensure NGINX directories and files are owned by root (Automated)"
+echo -e "\n\e[4mCIS 2.3.1\e[0m - Ensure NGINX directories and files are owned by root (Automated)"
 stat /etc/nginx
 
 #2.3.2 Ensure access to NGINX directories and files is restricted (Automated)
-echo -e "\nCIS 2.3.2 - Ensure access to NGINX directories and files is restricted (Automated)"
+echo -e "\n\e[4mCIS 2.3.2\e[0m - Ensure access to NGINX directories and files is restricted (Automated)"
 find /etc/nginx -type d -exec stat -Lc "%n %a" {} +
 find /etc/nginx -type f -exec stat -Lc "%n %a" {} +
 
 #2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)
-echo -e "\nCIS 2.3.3 - Ensure the NGINX process ID (PID) file is secured (Automated)"
+echo -e "\n\e[4mCIS 2.3.3\e[0m - Ensure the NGINX process ID (PID) file is secured (Automated)"
 stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
 
 #2.3.4 Ensure the core dump directory is secured (Manual)
@@ -170,30 +209,30 @@ stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
 #2.4.1 Ensure NGINX only listens for network connections on authorized ports (Manual)
 
 #2.4.2 Ensure requests for unknown host names are rejected (Automated)
-echo -e "\nCIS 2.4.2 - Ensure requests for unknown host names are rejected (Automated)"
+echo -e "\n\e[4mCIS 2.4.2\e[0m - Ensure requests for unknown host names are rejected (Automated)"
 curl -k -v https://127.0.0.1 -H 'Host: invalid.host.com'
 
 #2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)
-echo -e "\nCIS 2.4.3 - Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
+echo -e "\n\e[4mCIS 2.4.3\e[0m - Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
 grep -ir keepalive_timeout /etc/nginx
 
 #2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
-echo -e "\nCIS 2.4.4 - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
+echo -e "\n\e[4mCIS 2.4.4\e[0m - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
 grep -ir send_timeout /etc/nginx
 
 #2.5.1 Ensure server_tokens directive is set to `off` (Automated)
-echo -e "\nCIS 2.5.1 - Ensure server_tokens directive is set to `off` (Automated)"
+echo -e "\n\e[4mCIS 2.5.1\e[0m - Ensure server_tokens directive is set to `off` (Automated)"
 curl -I 127.0.0.1 | grep -i server
 
 #2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
-echo -e "\nCIS 2.5.2 - Ensure default error and index.html pages do not reference NGINX (Automated)"
+echo -e "\n\e[4mCIS 2.5.2\e[0m - Ensure default error and index.html pages do not reference NGINX (Automated)"
 grep -i nginx /usr/share/nginx/html/index.html
 grep -i nginx /usr/share/nginx/html/50x.html
 
 #2.5.3 Ensure hidden file serving is disabled (Manual)
 
 #2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)
-echo -e "\nCIS 2.5.4 - Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
+echo -e "\n\e[4mCIS 2.5.4\e[0m - Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
 grep proxy_hide_header /etc/nginx/nginx.conf
 
 #3.1 Ensure detailed logging is enabled (Manual)
@@ -201,11 +240,11 @@ grep proxy_hide_header /etc/nginx/nginx.conf
 #3.2 Ensure access logging is enabled (Manual)
 
 #3.3 Ensure error logging is enabled and set to the info logging level (Automated)
-echo -e "\nCIS 3.3 - Ensure error logging is enabled and set to the info logging level (Automated)"
+echo -e "\n\e[4mCIS 3.3\e[0m - Ensure error logging is enabled and set to the info logging level (Automated)"
 grep error_log /etc/nginx/nginx.conf
 
 #3.4 Ensure log files are rotated (Automated)
-echo -e "\nCIS 3.4 - Ensure log files are rotated (Automated)"
+echo -e "\n\e[4mCIS 3.4\e[0m - Ensure log files are rotated (Automated)"
 cat /etc/logrotate.d/nginx | grep weekly
 cat /etc/logrotate.d/nginx | grep rotate
 
@@ -220,29 +259,29 @@ cat /etc/logrotate.d/nginx | grep rotate
 #4.1.2 Ensure a trusted certificate and trust chain is installed (Manual)
 
 #4.1.3 Ensure private key permissions are restricted (Automated)
-echo -e "\nCIS 4.1.3 - Ensure private key permissions are restricted (Automated)"
+echo -e "\n\e[4mCIS 4.1.3\e[0m - Ensure private key permissions are restricted (Automated)"
 find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} +
 
 #4.1.4 Ensure only modern TLS protocols are used (Automated)
-echo -e "\nCIS 4.1.4 - Ensure only modern TLS protocols are used (Automated)"
+echo -e "\n\e[4mCIS 4.1.4\e[0m - Ensure only modern TLS protocols are used (Automated)"
 grep -ir ssl_protocol /etc/nginx
 
 #4.1.5 Disable weak ciphers (Manual)
 
 #4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)
-echo -e "\nCIS 4.1.6 - Ensure custom Diffie-Hellman parameters are used (Automated)"
+echo -e "\n\e[4mCIS 4.1.6\e[0m - Ensure custom Diffie-Hellman parameters are used (Automated)"
 grep ssl_dhparam /etc/nginx/nginx.conf
 
 #4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)
-echo -e "\nCIS 4.1.7 - Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
+echo -e "\n\e[4mCIS 4.1.7\e[0m - Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
 grep -ir ssl_stapling /etc/nginx
 
 #4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)
-echo -e "\nCIS 4.1.8 - Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
+echo -e "\n\e[4mCIS 4.1.8\e[0m - Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
 grep -ir Strict-Transport-Security /etc/nginx
 
 #4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)
-echo -e "\nCIS 4.1.9 - Ensure upstream server traffic is authenticated with a client certificate (Automated)"
+echo -e "\n\e[4mCIS 4.1.9\e[0m - Ensure upstream server traffic is authenticated with a client certificate (Automated)"
 grep -ir proxy_ssl_certificate /etc/nginx
 
 #4.1.10 Ensure the upstream traffic server certificate is trusted (Manual)
@@ -250,15 +289,15 @@ grep -ir proxy_ssl_certificate /etc/nginx
 #4.1.11 Ensure your domain is preloaded (Manual)
 
 #4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)
-echo -e "\nCIS 4.1.12 - Ensure session resumption is disabled to enable perfect forward security (Automated)"
+echo -e "\n\e[4mCIS 4.1.12\e[0m - Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir ssl_session_tickets /etc/nginx
 
 #4.1.13 Ensure HTTP/2.0 is used (Automated)
-echo -e "\nCIS 4.1.12 - Ensure session resumption is disabled to enable perfect forward security (Automated)"
+echo -e "\n\e[4mCIS 4.1.12\e[0m - Ensure session resumption is disabled to enable perfect forward security (Automated)"
 grep -ir http2 /etc/nginx
 
 #4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)
-echo -e "\nCIS 4.1.14 - Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)"
+echo -e "\n\e[4mCIS 4.1.14\e[0m - Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)"
 grep -ir ssl_ciphers /etc/nginx/
 grep -ir proxy_ssl_ciphers /etc/nginx
 
@@ -267,15 +306,15 @@ grep -ir proxy_ssl_ciphers /etc/nginx
 #5.1.2 Ensure only approved HTTP methods are allowed (Manual)
 
 #5.2.1 Ensure timeout values for reading the client header and body are set correctly (Automated)
-echo -e "\nCIS - 5.2.1 Ensure timeout values for reading the client header and body are set correctly (Automated)"
+echo -e "\n\e[4mCIS - 5.2.1\e[0m Ensure timeout values for reading the client header and body are set correctly (Automated)"
 grep -ir timeout /etc/nginx
 
 #5.2.2 Ensure the maximum request body size is set correctly (Automated)
-echo -e "\nCIS 5.2.2 - Ensure the maximum request body size is set correctly (Automated)"
+echo -e "\n\e[4mCIS 5.2.2\e[0m - Ensure the maximum request body size is set correctly (Automated)"
 grep -ir client_max_body_size /etc/nginx
 
 #5.2.3 Ensure the maximum buffer size for URIs is defined (Automated)
-echo -e "\nCIS 5.2.3 - Ensure the maximum buffer size for URIs is defined (Automated)"
+echo -e "\n\e[4mCIS 5.2.3\e[0m - Ensure the maximum buffer size for URIs is defined (Automated)"
 grep -ir large_client_header_buffers /etc/nginx/
 
 #5.2.4 Ensure the number of connections per IP address is limited (Manual)
@@ -283,11 +322,11 @@ grep -ir large_client_header_buffers /etc/nginx/
 #5.2.5 Ensure rate limits by IP address are set (Manual)
 
 #5.3.1 Ensure X-Frame-Options header is configured and enabled (Automated)
-echo -e "\nCIS 5.3.1 - Ensure X-Frame-Options header is configured and enabled (Automated)"
+echo -e "\n\e[4mCIS 5.3.1\e[0m - Ensure X-Frame-Options header is configured and enabled (Automated)"
 grep -ir X-Frame-Options /etc/nginx
 
 #5.3.2 Ensure X-Content-Type-Options header is configured and enabled (Automated)
-echo -e "\nCIS 5.3.2 - Ensure X-Content-Type-Options header is configured and enabled (Automated)"
+echo -e "\n\e[4mCIS 5.3.2\e[0m - Ensure X-Content-Type-Options header is configured and enabled (Automated)"
 grep -ir X-Content-Type-Options /etc/nginx
 
 #5.3.3 Ensure that Content Security Policy (CSP) is enabled and configured properly (Manual)
