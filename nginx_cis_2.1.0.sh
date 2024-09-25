@@ -236,7 +236,27 @@ done
 
 #2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)
 echo -e "\n\e[4mCIS 2.3.3\e[0m - Ensure the NGINX process ID (PID) file is secured (Automated)"
-stat -L -c "%U:%G" /var/run/nginx.pid && stat -L -c "%a" /var/run/nginx.pid
+a=$(stat -L -c "%U:%G" /var/run/nginx.pid)
+b=$(stat -L -c "%a" /var/run/nginx.pid)
+if  [[ "$a" =~ 'root' ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is owned by root"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nNGINX process PID file is not owned by root"
+        failed
+        echo -e "Remediation: If the PID file is not owned by root, issue this command: chown root:root /var/run/nginx.pid"
+fi
+
+if  [[ "$b" > 644 ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nNGINX process PID file is over permissive"
+        failed
+	echo -e "Remediation: If the PID file has permissions greater than 644, issue this command: chmod u-x,go-wx /var/run/nginx.pid"
+else
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is restricted"
+        passed
+fi
 
 #2.3.4 Ensure the core dump directory is secured (Manual)
 
