@@ -19,10 +19,10 @@ checkid() {
 echo -e "\n\n(Checking admin execution rights)"
 if [[ "${UID}" -ne 0 ]]
 then
-	echo -e "FAILURE\nPlease use sudo for script execution"
+	echo -e "\e[31mFAILURE\e[0m\nPlease use sudo for script execution"
 	exit 1
 else
-	echo -ne "SUCCESS"
+	echo -ne "\e[38;5;42mSUCCESS\e[39m"
 fi
 }
 checkid
@@ -33,15 +33,15 @@ checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
 then
-	echo -e "FAILURE\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
+	echo -e "\e[31mFAILURE\e[0m\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
 	exit 1
 else
-	echo -e "SUCCESS"
+	echo -e "\e[38;5;42mSUCCESS\e[39m"
 fi
 }
 checkos
 
-echo -e "\n##### Analyzing the Nginx Server against CIS Benchmarks ######"
+echo -e "\n##### Evaluating the NGINX Server against CIS Benchmarks ######"
 pass=0
 fail=0
 
@@ -56,8 +56,8 @@ failed() {
 score(){
 total=$((pass+fail))
 percent=$((pass*100/total))
-echo -e "\n\e[4mCIS Compliance Checks Passed\e[0m: $pass/$total"
-echo -e "\e[4mCIS Compliance Percentage\e[0m: $percent%"
+echo -e "\n\e[1mCIS Compliance Checks Passed\e[0m: $pass/$total"
+echo -e "\e[1mCIS Compliance Percentage\e[0m: $percent%"
 }
 
 #1.1.1- Ensure NGINX is installed (Automated)
@@ -86,7 +86,7 @@ echo -e "\n\e[4mCIS 2.1.2\e[0m - Ensure HTTP WebDAV module is not installed (Aut
 nginx -V 2>&1 | grep http_dav_module > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
-        echo -e "SUCCESS\nhttp_dav_module is not installed on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nhttp_dav_module is not installed on this server"
         passed
 else
         echo -e "\e[31mFAILURE\e[0m\nhttp_dav_module is installed on this server"
@@ -99,10 +99,10 @@ echo -e "\n\e[4mCIS 2.1.3\e[0m - Ensure modules with gzip functionality are disa
 nginx -V 2>&1 | grep -E '(http_gzip_module|http_gzip_static_module)' > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
-        echo -e "SUCCESS\n GZIP is not installed on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nGZIP is not installed on this server"
         passed
 else
-        echo -e "FAILURE\nGZIP is installed on this server"
+        echo -e "\e[31mFAILURE\e[0m\nGZIP is installed on this server"
         failed
         echo -e "Remediation: In order to disable the http_gzip_module and the http_gzip_static_module, NGINX must be recompiled from source. This can be accomplished using the below command in the folder you used during your original compilation. This must be done without the --withhttp_gzip_static_module or --with-http_gzip_module configuration directives. ./configure --without-http_gzip_module --without-http_gzip_static_module. Default Value: The http_gzip_module is enabled by default in the source build, and the http_gzip_static_module is not. Only the http_gzip_static_module is enabled by default in the dnf package. References: 1. http://nginx.org/en/docs/configure.html 2. http://nginx.org/en/docs/configure.html 3. http://nginx.org/en/docs/http/ngx_http_gzip_module.html 4. http://nginx.org/en/docs/http/ngx_http_gzip_static_module.html"
 fi
@@ -114,11 +114,11 @@ a=$(egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf)
 b=$(egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/*)
 if  [[ ( "$a" == 'autoindex on' ) || ( "$b" == 'autoindex on' ) ]]
 then
-        echo -e "FAILURE\nautoindex is not disabled on this server"
+        echo -e "\e[31mFAILURE\e[0m\nautoindex is not disabled on this server"
         failed
         echo -e "Remediation: Search the NGINX configuration files (nginx.conf and any included configuration files) to find autoindex directives. Set the value for all autoindex directives to off, or remove those directives. References: 1. http://nginx.org/en/docs/http/ngx_http_autoindex_module.html"
 else
-        echo -e "SUCCESS\nautoindex is disabled on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nautoindex is disabled on this server"
         passed
 fi
 
@@ -128,72 +128,81 @@ user=$(grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf | cut -d 
 a=$(sudo -l -U $user)
 if  [[ "$a" =~ 'not allowed' ]]
 then
-        echo -e "SUCCESS\nnginx service is running with non-sudo user privilege on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nnginx service $user is running with non-sudo user privilege on this server"
         passed
 else
-	echo -e "FAILURE\nginx service is running with sudo user privilege on this server"
+	echo -e "\e[31mFAILURE\e[0m\nginx service $user is running with sudo user privilege on this server"
 	failed
-	echo -e "Remediation: Add a system account for the nginx user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
+	echo -e "Remediation: Add a system account for the $user user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
 fi
 
 b=$(groups $user | cut -d ':' -f 1)
 c=$(groups $user | cut -d ':' -f 2 | cut -d ' ' -f 2)
 if [[ ( "$b" == "$c ") ]]
 then
-	echo -e "SUCCESS\nnginx service user is not part of any other groups than the primary user group"
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nnginx service $user is not part of any other groups than the primary user group $b"
 	passed
 else
-	echo -e "FAILURE\nnginx service user is part of other groups than the primary user group $b: $c"
+	echo -e "\e[31mFAILURE\e[0m\nnginx service $user is part of other groups than the primary user group $b: $c"
 	failed
-	echo -e "Remediation: Add a system account for the nginx user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value:By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
+	echo -e "Remediation: Add a system account for the nginx $user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value:By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
 fi
 
 #2.2.2 Ensure the NGINX service account is locked (Automated)
 echo -e "\n\e[4mCIS 2.2.2\e[0m - Ensure the NGINX service account is locked (Automated)"
 a=$(passwd -S "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')")
-if  [[ "$a" =~ 'Password locked' ]]
+b=$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')
+echo "$a"
+if  [[ "$a" =~ 'L' ]]
 then
-        echo -e "SUCCESS\nNGINX service account is locked"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service account $b is locked"
         passed
 else
-        echo -e "FAILURE\nNGINX service account is not locked"
+        echo -e "\e[31mFAILURE\e[0m\nNGINX service account is not locked"
         failed
-	echo -e "Remediation: Use the passwd command to lock the nginx service account: passwd -l "$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')""
+	echo -e "Remediation: Use the passwd command to lock the nginx service account: passwd -l $b)"
 fi
+
 #2.2.3 Ensure the NGINX service account has an invalid shell (Automated)
 echo -e "\n\e[4mCIS 2.2.3\e[0m - Ensure the NGINX service account has an invalid shell (Automated)"
 shell()
 {
- l_output="" l_output2="" l_out=""
- if [ -f /etc/nginx/nginx.conf ]; then
- l_user="$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf |
-sed -r 's/;.*//g')"
- l_valid_shells="^($( sed -rn '/^\//{s,/,\\\\/,g;p}' /etc/shells | paste
--s -d '|' - ))$"
- l_out="$(awk -v pat="$l_valid_shells" -v ngusr="$l_user" -F: '($(NF) ~
-pat && $1==ngusr) { $(NF-1) }' /etc/passwd)"
- if [ -z "$l_out" ]; then
- l_output=" - NGINX user account: \"$l_user\" has an invalid shell"
- else
- l_output2=" - NGINX user account: \"$l_user\" has a valid shell:
-\"$l_out\""
- fi
- else
- l_output2=" - NGINX user account can not be determined.\n - file:
-\"/etc/nginx/nginx.conf\" is missing"
- fi
- if [ -z "$l_output2" ]; then
- echo -e "\n- Audit Result:\n ** PASS **\n$l_output\n"
- else
- echo -e "\n- Audit Result:\n ** FAIL **\n - Reason(s) for audit
-failure:\n$l_output2\n"
- fi
+	l_output="" l_output2="" l_out=""
+	if [ -f /etc/nginx/nginx.conf ]; then
+	l_user="$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf |
+	sed -r 's/;.*//g')"
+	l_valid_shells="^($( sed -rn '/^\//{s,/,\\\\/,g;p}' /etc/shells | paste -s -d '|' - ))$"
+	l_out="$(awk -v pat="$l_valid_shells" -v ngusr="$l_user" -F: '($(NF) ~pat && $1==ngusr) { $(NF-1) }' /etc/passwd)"
+	if [ -z "$l_out" ]; then
+	l_output=" - NGINX user account: \"$l_user\" has an invalid shell"
+	else
+	l_output2=" - NGINX user account: \"$l_user\" has a valid shell:\"$l_out\""
+	fi
+	else
+	l_output2=" - NGINX user account can not be determined.\n - file:\"/etc/nginx/nginx.conf\" is missing"
+	fi
+	if [ -z "$l_output2" ]; then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service account $l_user has an invalid shell"
+	passed
+	else
+	echo -e "\e[31mFAILURE\e[0m\n - Reason(s) for auditfailure:\n$l_output2\n"
+	echo -e "Remediation: Remediation: Change the login shell for the nginx account to /sbin/nologin by using the following command: usermod -s /sbin/nologin $l_user"
+	fi
 }
 shell
 
 #2.3.1 Ensure NGINX directories and files are owned by root (Automated)
 echo -e "\n\e[4mCIS 2.3.1\e[0m - Ensure NGINX directories and files are owned by root (Automated)"
-stat /etc/nginx
+a=$(stat /etc/nginx | grep -i -m 1 access)
+if  [[ "$a" =~ 'root' ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX directories and files are owned by root"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nNGINX directories and files are not owned by root"
+        failed
+        echo -e "Remediation: Run the following command to ensure ownership and group ownership is set to root: chown -R root:root /etc/nginx)"
+fi
 
 #2.3.2 Ensure access to NGINX directories and files is restricted (Automated)
 echo -e "\n\e[4mCIS 2.3.2\e[0m - Ensure access to NGINX directories and files is restricted (Automated)"
