@@ -56,8 +56,8 @@ failed() {
 score(){
 total=$((pass+fail))
 percent=$((pass*100/total))
-echo -e "\n\e[1mCIS Compliance Checks Passed\e[0m: $pass/$total"
-echo -e "\e[1mCIS Compliance Percentage\e[0m: $percent%"
+echo -e "\n\e[1mCIS Compliance Checks Passed: $pass/$total\e[0m"
+echo -e "\e[1mCIS Compliance Percentage: $percent%\e[0m"
 }
 
 #1.1.1- Ensure NGINX is installed (Automated)
@@ -206,8 +206,33 @@ fi
 
 #2.3.2 Ensure access to NGINX directories and files is restricted (Automated)
 echo -e "\n\e[4mCIS 2.3.2\e[0m - Ensure access to NGINX directories and files is restricted (Automated)"
-find /etc/nginx -type d -exec stat -Lc "%n %a" {} +
-find /etc/nginx -type f -exec stat -Lc "%n %a" {} +
+dir=$(find /etc/nginx -type d -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
+fil=$(find /etc/nginx -type f -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
+for d in dir
+do
+	if [[ "$d" > 755  ]]
+	then
+	echo -e "\e[31mFAILURE\e[0m\nSome permissions of NGINX sub-directories under directory /etc/nginx are over permissive"
+	failed
+	echo -e "Remediation: Run the following command to set 755 permissions on all NGINX sub-directories under /etc/nginx: find /etc/nginx -type d -exec chmod go-w {} +"
+	else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nAll NGINX sub-directories under /etc/nginx have strict permissions"
+	passed
+	fi
+done
+
+for f in fil
+do
+        if [[ "$f" > 644  ]]
+        then
+        echo -e "\e[31mFAILURE\e[0m\nSome file permissions of files under NGINX directory /etc/nginx are over permissive"
+        failed
+        echo -e "Remediation: Run the following command to set 755 permissions on all NGINX directories: find /etc/nginx -type f -exec chmod ug-x,o-rwx {} +"
+        else
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nAll files under NGINX directory /etc/nginx  have strict permissions"
+        passed
+        fi
+done
 
 #2.3.3 Ensure the NGINX process ID (PID) file is secured (Automated)
 echo -e "\n\e[4mCIS 2.3.3\e[0m - Ensure the NGINX process ID (PID) file is secured (Automated)"
