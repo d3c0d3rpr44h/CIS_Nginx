@@ -138,7 +138,7 @@ fi
 
 b=$(groups $user | cut -d ':' -f 1)
 c=$(groups $user | cut -d ':' -f 2 | cut -d ' ' -f 2)
-if [[ ( "$b" == "$c ") ]]
+if [[ ( "$b" == "$c" ) ]]
 then
 	echo -e "\e[38;5;42mSUCCESS\e[39m\nnginx service $user is not part of any other groups than the primary user group $b"
 	passed
@@ -312,18 +312,37 @@ then
 	echo -e "Remediation: To disable the server_tokens directive, set it to off inside of every server block in your nginx.conf or in the http block:server {...server_tokens off;...}"
 else
 	echo -e "\e[38;5;42mSUCCESS\e[39m\nServer_tokens directive is set to off in all server blocks"
+	passed
 fi
 
 #2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
 echo -e "\n\e[4mCIS 2.5.2\e[0m - Ensure default error and index.html pages do not reference NGINX (Automated)"
-grep -i nginx /usr/share/nginx/html/index.html
-grep -i nginx /usr/share/nginx/html/50x.html
+a=$(grep -i nginx /usr/share/nginx/html/index.html)
+b=$(grep -i nginx /usr/share/nginx/html/50x.html)
+if  [[ ( "$a" =~ 'nginx' ) || ( "$b" =~ 'nginx' ) ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nDefault error or index.html page references NGINX"
+	failed
+	echo -e "Remediation: Edit /usr/share/nginx/html/index.html and usr/share/nginx/html/50x.html and remove any lines that reference NGINX."
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\ndefault error and index.html pages do not reference NGINX " 
+	passed
+fi
 
 #2.5.3 Ensure hidden file serving is disabled (Manual)
 
 #2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)
 echo -e "\n\e[4mCIS 2.5.4\e[0m - Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
-grep proxy_hide_header /etc/nginx/nginx.conf
+a=$(grep proxy_hide_header /etc/nginx/nginx.conf)
+if  [[ !( "$a" =~ 'proxy_hide_header X-Powered-By' ) || !( "$a" =~ 'proxy_hide_header Server' ) ]]
+then
+	echo -e "\e[31mFAILURE\e[0m\nProxy_hide_headers: <X-Powered-By> and/or <Server> not enabled"
+	failed
+	echo -e "Remediation: Implement the below directives as part of your location block. Edit /etc/nginx/nginx.conf and add the following: location /docs { .... proxy_hide_header X-Powered-By; proxy_hide_header Server;....}"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nProxy_hide_headers: <X-Powered-By> and <Server> are enabled"
+	passed
+fi
 
 #3.1 Ensure detailed logging is enabled (Manual)
 
