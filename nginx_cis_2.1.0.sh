@@ -11,12 +11,12 @@
 #x.x.x - shows the section number along with the benchmark check
 
 
-echo -ne "\n\e[4m########## Running the NGINX CIS Checker ##########\e[0m"
+echo -ne "\n########## Running the NGINX CIS Checker ##########"
 
 #Check admin rights for script execution
 
 checkid() {
-echo -e "\n\n\e[4m##### Checking admin execution rights #####\e[0m"
+echo -e "\n\n(Checking admin execution rights)"
 if [[ "${UID}" -ne 0 ]]
 then
 	echo -e "FAILURE\nPlease use sudo for script execution"
@@ -28,7 +28,7 @@ fi
 checkid
 
 #Check if OS is Ubuntu based
-echo -e "\n\n\e[4m##### Checking if OS is Ubuntu #####\e[0m"
+echo -e "\n\n(Checking if OS is Ubuntu)"
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
@@ -41,7 +41,7 @@ fi
 }
 checkos
 
-echo -e "\n\e[4m##### Analyzing the Nginx Server against CIS Benchmarks ######\e[0m"
+echo -e "\n##### Analyzing the Nginx Server against CIS Benchmarks ######"
 pass=0
 fail=0
 
@@ -65,11 +65,11 @@ echo -e "\n\e[4mCIS 1.1.1\e[0m - Ensure NGINX is installed (Automated)"
 nginx -v 
 if  [[ "${?}" -ne 0 ]]
 then
-	echo -e "FAILURE\nNginx is not installed on this server"
+	echo -e "\e[31mFAILURE\e[0m\nNginx is not installed on this server"
 	failed
 	exit 1
 else
-	echo -e "SUCCESS\nNginx is installed"
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nNginx is installed"
 	passed
 fi
 
@@ -89,7 +89,7 @@ then
         echo -e "SUCCESS\nhttp_dav_module is not installed on this server"
         passed
 else
-        echo -e "FAILURE\nhttp_dav_module is installed on this server"
+        echo -e "\e[31mFAILURE\e[0m\nhttp_dav_module is installed on this server"
         failed
 	echo -e "Remediation: NGINX does not support the removal of modules using the dnf method of installation. In order to remove modules from NGINX, you will need to compile NGINX from source. References: 1. http://nginx.org/en/docs/configure.html 2. https://tools.ietf.org/html/rfc4918"
 fi
