@@ -265,17 +265,44 @@ fi
 #2.4.2 Ensure requests for unknown host names are rejected (Automated)
 echo -e "\n\e[4mCIS 2.4.2\e[0m - Ensure requests for unknown host names are rejected (Automated)"
 curl -k -v https://127.0.0.1 -H 'Host: invalid.host.com'
+if  [[ "${?}" -ne 0 ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nRequests for unknown host names are not rejected"
+        failed
+        echo -e "Remediation: Remediation: Ensure your first server block mirrors the below in your nginx configuration, either at /etc/nginx/nginx.conf or any included file within your nginx config: server { return 404;} Then investigate each server block to ensure the server_name directive is explicitly defined. Each server block should look similar to the below with the defined hostname of the associated server block in the server_name directive. For example, if your server is cisecurity.org, the configuration should look like the below example: server { listen 443;server_name cisecurity.org;.....}"
+else
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nRequests for unknown host names are not rejected"
+        passed
+fi
 
 #2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)
 echo -e "\n\e[4mCIS 2.4.3\e[0m - Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
-grep -ir keepalive_timeout /etc/nginx
+a=$(grep -ir keepalive_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
+if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nkeepalive_timeout is $a"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nkeepalive_timeout is : $a which is not 10 seconds or less"
+        failed
+	echo -e "Remediation: Find the HTTP or server block of your nginx configuration, and add the keepalive_timeout directive. Set it to 10 seconds or less, but not 0. This example command sets it to 10 seconds: keepalive_timeout 10;"
+fi
 
 #2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
 echo -e "\n\e[4mCIS 2.4.4\e[0m - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
-grep -ir send_timeout /etc/nginx
+a=$(grep -ir send_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
+if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nsend_timeout is $a"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nsend_timeout is : $a which is not 10 seconds or less"
+        failed
+	echo -e "Remediation: Find the HTTP or server block of your nginx configuration, and add the send_timeout directive. Set it to 10 seconds or less, but not 0. send_timeout 10;"
+fi
 
 #2.5.1 Ensure server_tokens directive is set to `off` (Automated)
-echo -e "\n\e[4mCIS 2.5.1\e[0m - Ensure server_tokens directive is set to `off` (Automated)"
+echo -e "\n\e[4mCIS 2.5.1\e[0m - Ensure server_tokens directive is set to off (Automated)"
 curl -I 127.0.0.1 | grep -i server
 
 #2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
