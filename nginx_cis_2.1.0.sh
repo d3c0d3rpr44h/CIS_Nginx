@@ -303,7 +303,16 @@ fi
 
 #2.5.1 Ensure server_tokens directive is set to `off` (Automated)
 echo -e "\n\e[4mCIS 2.5.1\e[0m - Ensure server_tokens directive is set to off (Automated)"
-curl -I 127.0.0.1 | grep -i server
+a=$(curl -I 127.0.0.1 | grep -i server | cut -d " " -f 2)
+echo "$a"
+if  [[ "$a" =~ 'nginx' ]]
+then
+	echo -e "\e[31mFAILURE\e[0m\nServer_tokens directive is set to on. Nginx version is visible"
+	failed
+	echo -e "Remediation: To disable the server_tokens directive, set it to off inside of every server block in your nginx.conf or in the http block:server {...server_tokens off;...}"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nServer_tokens directive is set to off in all server blocks"
+fi
 
 #2.5.2 Ensure default error and index.html pages do not reference NGINX (Automated)
 echo -e "\n\e[4mCIS 2.5.2\e[0m - Ensure default error and index.html pages do not reference NGINX (Automated)"
