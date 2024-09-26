@@ -86,10 +86,10 @@ echo -e "\n\e[4mCIS 2.1.2\e[0m - Ensure HTTP WebDAV module is not installed (Aut
 nginx -V 2>&1 | grep http_dav_module > /dev/null
 if  [[ "${?}" -ne 0 ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nhttp_dav_module is not installed on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nModule http_dav_module is not installed on this server"
         passed
 else
-        echo -e "\e[31mFAILURE\e[0m\nhttp_dav_module is installed on this server"
+        echo -e "\e[31mFAILURE\e[0m\nModule http_dav_module is installed on this server"
         failed
 	echo -e "Remediation: NGINX does not support the removal of modules using the dnf method of installation. In order to remove modules from NGINX, you will need to compile NGINX from source. References: 1. http://nginx.org/en/docs/configure.html 2. https://tools.ietf.org/html/rfc4918"
 fi
@@ -114,11 +114,11 @@ a=$(egrep -i '^\s*autoindex\s+' /etc/nginx/nginx.conf)
 b=$(egrep -i '^\s*autoindex\s+' /etc/nginx/conf.d/*)
 if  [[ ( "$a" == 'autoindex on' ) || ( "$b" == 'autoindex on' ) ]]
 then
-        echo -e "\e[31mFAILURE\e[0m\nautoindex is not disabled on this server"
+        echo -e "\e[31mFAILURE\e[0m\nAutoindex is not disabled on this server"
         failed
         echo -e "Remediation: Search the NGINX configuration files (nginx.conf and any included configuration files) to find autoindex directives. Set the value for all autoindex directives to off, or remove those directives. References: 1. http://nginx.org/en/docs/http/ngx_http_autoindex_module.html"
 else
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nautoindex is disabled on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nAutoindex is disabled on this server"
         passed
 fi
 
@@ -128,10 +128,10 @@ user=$(grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf | cut -d 
 a=$(sudo -l -U $user)
 if  [[ "$a" =~ 'not allowed' ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nnginx service $user is running with non-sudo user privilege on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service $user is running with non-sudo user privilege on this server"
         passed
 else
-	echo -e "\e[31mFAILURE\e[0m\nginx service $user is running with sudo user privilege on this server"
+	echo -e "\e[31mFAILURE\e[0m\nNGINX service $user is running with sudo user privilege on this server"
 	failed
 	echo -e "Remediation: Add a system account for the $user user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
 fi
@@ -140,10 +140,10 @@ b=$(groups $user | cut -d ':' -f 1)
 c=$(groups $user | cut -d ':' -f 2 | cut -d ' ' -f 2)
 if [[ ( "$b" == "$c" ) ]]
 then
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nnginx service $user is not part of any other groups than the primary user group $b"
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service $user is not part of any other groups than the primary user group $b"
 	passed
 else
-	echo -e "\e[31mFAILURE\e[0m\nnginx service $user is part of other groups than the primary user group $b: $c"
+	echo -e "\e[31mFAILURE\e[0m\nNGINX service $user is part of other groups than the primary user group $b: $c"
 	failed
 	echo -e "Remediation: Add a system account for the nginx $user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value:By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
 fi
@@ -186,6 +186,7 @@ shell()
 	passed
 	else
 	echo -e "\e[31mFAILURE\e[0m\n - Reason(s) for auditfailure:\n$l_output2\n"
+	failed
 	echo -e "Remediation: Remediation: Change the login shell for the nginx account to /sbin/nologin by using the following command: usermod -s /sbin/nologin $l_user"
 	fi
 }
@@ -280,10 +281,10 @@ echo -e "\n\e[4mCIS 2.4.3\e[0m - Ensure keepalive_timeout is 10 seconds or less,
 a=$(grep -ir keepalive_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
 if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nkeepalive_timeout is $a"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nThe directive keepalive_timeout is $a"
         passed
 else
-        echo -e "\e[31mFAILURE\e[0m\nkeepalive_timeout is : $a which is not 10 seconds or less"
+        echo -e "\e[31mFAILURE\e[0m\nThe directive keepalive_timeout is : $a which is not 10 seconds or less"
         failed
 	echo -e "Remediation: Find the HTTP or server block of your nginx configuration, and add the keepalive_timeout directive. Set it to 10 seconds or less, but not 0. This example command sets it to 10 seconds: keepalive_timeout 10;"
 fi
@@ -293,10 +294,10 @@ echo -e "\n\e[4mCIS 2.4.4\e[0m - Ensure send_timeout is set to 10 seconds or les
 a=$(grep -ir send_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
 if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nsend_timeout is $a"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nThe send_timeout directive is set to $a"
         passed
 else
-        echo -e "\e[31mFAILURE\e[0m\nsend_timeout is : $a which is not 10 seconds or less"
+        echo -e "\e[31mFAILURE\e[0m\nThe send_timeout directive is : $a which is not 10 seconds or less"
         failed
 	echo -e "Remediation: Find the HTTP or server block of your nginx configuration, and add the send_timeout directive. Set it to 10 seconds or less, but not 0. send_timeout 10;"
 fi
@@ -307,11 +308,11 @@ a=$(curl -I 127.0.0.1 | grep -i server | cut -d " " -f 2)
 echo "$a"
 if  [[ "$a" =~ 'nginx' ]]
 then
-	echo -e "\e[31mFAILURE\e[0m\nServer_tokens directive is set to on. Nginx version is visible"
+	echo -e "\e[31mFAILURE\e[0m\nThe server_tokens directive is set to on. Nginx version is visible"
 	failed
 	echo -e "Remediation: To disable the server_tokens directive, set it to off inside of every server block in your nginx.conf or in the http block:server {...server_tokens off;...}"
 else
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nServer_tokens directive is set to off in all server blocks"
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nThe server_tokens directive is set to off in all server blocks"
 	passed
 fi
 
@@ -325,7 +326,7 @@ then
 	failed
 	echo -e "Remediation: Edit /usr/share/nginx/html/index.html and usr/share/nginx/html/50x.html and remove any lines that reference NGINX."
 else
-	echo -e "\e[38;5;42mSUCCESS\e[39m\ndefault error and index.html pages do not reference NGINX " 
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nDefault error and index.html pages do not reference NGINX " 
 	passed
 fi
 
@@ -350,12 +351,40 @@ fi
 
 #3.3 Ensure error logging is enabled and set to the info logging level (Automated)
 echo -e "\n\e[4mCIS 3.3\e[0m - Ensure error logging is enabled and set to the info logging level (Automated)"
-grep error_log /etc/nginx/nginx.conf
+a=$(grep error_log /etc/nginx/nginx.conf)
+if  [[ ! ( "$a" == '' ) && ! ( "$a" =~ '#' ) && ( "$a" =~ 'info' ) ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nError logging is enabled and set to the info logging level"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nError logging is not enabled or set to info logging level"
+	failed
+	echo -e "Remediation: Edit /etc/nginx/nginx.conf so the error_log directive is present and not commented out. The error_log should be configured to the logging location of your choice. The configuration should look similar to the below: error_log /var/log/nginx/error_log.log info;"
+fi
 
 #3.4 Ensure log files are rotated (Automated)
 echo -e "\n\e[4mCIS 3.4\e[0m - Ensure log files are rotated (Automated)"
 cat /etc/logrotate.d/nginx | grep weekly
-cat /etc/logrotate.d/nginx | grep rotate
+if  [[ "$?" -ne '0' ]]
+then
+	echo -e "\e[31mFAILURE\e[0m\nLog files are not being compressed on weekly basis"
+	failed
+	echo -e "Remediation: To change log compression from daily to weekly: sed -i <s/daily/weekly> /etc/logrotate.d/nginx"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nLog files are being compressed on weekly basis"
+	passed
+fi
+
+a=$(cat /etc/logrotate.d/nginx | grep -m 1 rotate | cut -d " " -f 2)
+if  [[ "$a" -ne '13' ]]
+then
+	echo -e "\e[31mFAILURE\e[0m\nLog files are being rotated every $a weeks. Recommended rotation is every 13 weeks"
+	failed
+	echo -e	"Remediation: To change log rotation from every year to every 13 weeks: sed -i <s/rotate 52/rotate 13/> /etc/logrotate.d/nginx"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nLog files are being rotated every 13 weeks"
+	passed
+fi
 
 #3.5 Ensure error logs are sent to a remote syslog server (Manual)
 
