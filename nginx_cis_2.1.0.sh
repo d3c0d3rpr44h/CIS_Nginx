@@ -128,12 +128,12 @@ user=$(grep -Pi -- '^\h*user\h+[^;\n\r]+\h*;.*$' /etc/nginx/nginx.conf | cut -d 
 a=$(sudo -l -U $user)
 if  [[ "$a" =~ 'not allowed' ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service $user is running with non-sudo user privilege on this server"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service $user is running with non-sudo user privilege on this server\n"
         passed
 else
 	echo -e "\e[31mFAILURE\e[0m\nNGINX service $user is running with sudo user privilege on this server"
 	failed
-	echo -e "Remediation: Add a system account for the $user user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged."
+	echo -e "Remediation: Add a system account for the $user user with a home directory of /var/cache/nginx and a shell of /sbin/nologin so it does not have the ability to log in, then add the nginx user to be used by nginx: useradd nginx -r -g nginx -d /var/cache/nginx -s /sbin/nologin Then add the nginx user to /etc/nginx/nginx.conf by adding the user directive as shown below: user nginx; Default Value: By default, if nginx is compiled from source, the user and group are nobody. If downloaded from dnf, the user and group nginx and the account are not privileged\n"
 fi
 
 b=$(groups $user | cut -d ':' -f 1)
@@ -213,12 +213,12 @@ for d in dir
 do
 	if [[ "$d" > 755  ]]
 	then
-	echo -e "\e[31mFAILURE\e[0m\nSome permissions of NGINX sub-directories under directory /etc/nginx are over permissive"
-	failed
-	echo -e "Remediation: Run the following command to set 755 permissions on all NGINX sub-directories under /etc/nginx: find /etc/nginx -type d -exec chmod go-w {} +"
+		echo -e "\e[31mFAILURE\e[0m\nSome permissions of NGINX sub-directories under directory /etc/nginx are over permissive"
+		failed
+		echo -e "Remediation: Run the following command to set 755 permissions on all NGINX sub-directories under /etc/nginx: find /etc/nginx -type d -exec chmod go-w {} +\n"
 	else
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nAll NGINX sub-directories under /etc/nginx have strict permissions"
-	passed
+		echo -e "\e[38;5;42mSUCCESS\e[39m\nAll NGINX sub-directories under /etc/nginx have strict permissions\n"
+		passed
 	fi
 done
 
@@ -226,12 +226,12 @@ for f in fil
 do
         if [[ "$f" > 644  ]]
         then
-        echo -e "\e[31mFAILURE\e[0m\nSome file permissions of files under NGINX directory /etc/nginx are over permissive"
-        failed
-        echo -e "Remediation: Run the following command to set 755 permissions on all NGINX directories: find /etc/nginx -type f -exec chmod ug-x,o-rwx {} +"
+	        echo -e "\e[31mFAILURE\e[0m\nSome file permissions of files under NGINX directory /etc/nginx are over permissive"
+        	failed
+        	echo -e "Remediation: Run the following command to set 755 permissions on all NGINX directories: find /etc/nginx -type f -exec chmod ug-x,o-rwx {} +"
         else
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nAll files under NGINX directory /etc/nginx  have strict permissions"
-        passed
+        	echo -e "\e[38;5;42mSUCCESS\e[39m\nAll files under NGINX directory /etc/nginx  have strict permissions"
+        	passed
         fi
 done
 
@@ -241,21 +241,21 @@ a=$(stat -L -c "%U:%G" /var/run/nginx.pid)
 b=$(stat -L -c "%a" /var/run/nginx.pid)
 if  [[ "$a" =~ 'root' ]]
 then
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is owned by root"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is owned by root\n"
         passed
 else
         echo -e "\e[31mFAILURE\e[0m\nNGINX process PID file is not owned by root"
         failed
-        echo -e "Remediation: If the PID file is not owned by root, issue this command: chown root:root /var/run/nginx.pid"
+        echo -e "Remediation: If the PID file is not owned by root, issue this command: chown root:root /var/run/nginx.pid\n"
 fi
 
 if  [[ "$b" > 644 ]]
 then
         echo -e "\e[31mFAILURE\e[0m\nNGINX process PID file is over permissive"
         failed
-	echo -e "Remediation: If the PID file has permissions greater than 644, issue this command: chmod u-x,go-wx /var/run/nginx.pid"
+	echo -e "Remediation: If the PID file has permissions greater than 644, issue this command: chmod u-x,go-wx /var/run/nginx.pid\n"
 else
-        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is restricted"
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX process PID file is restricted\n"
         passed
 fi
 
@@ -369,9 +369,9 @@ if  [[ "$?" -ne '0' ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nLog files are not being compressed on weekly basis"
 	failed
-	echo -e "Remediation: To change log compression from daily to weekly: sed -i <s/daily/weekly> /etc/logrotate.d/nginx"
+	echo -e "Remediation: To change log compression from daily to weekly: sed -i <s/daily/weekly> /etc/logrotate.d/nginx\n"
 else
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nLog files are being compressed on weekly basis"
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nLog files are being compressed on weekly basis\n"
 	passed
 fi
 
@@ -398,11 +398,40 @@ fi
 
 #4.1.3 Ensure private key permissions are restricted (Automated)
 echo -e "\n\e[4mCIS 4.1.3\e[0m - Ensure private key permissions are restricted (Automated)"
-find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} +
+b=$(find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
+if [[ ( "$b" < '400' ) || ( "$b" == '400' ) ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nPrivate key permissions are restricted"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nPrivate key permissions are over-permissive"
+	failed
+	echo -e "Remediation: Run the following command to remove excessive permissions on key files in the /etc/nginx/ directory. Note: The directory /etc/nginx/ should be replaced with the location of your key file. find /etc/nginx/ -name '*.key' -exec chmod u-wx,go-rwx {} +"
+fi
 
 #4.1.4 Ensure only modern TLS protocols are used (Automated)
 echo -e "\n\e[4mCIS 4.1.4\e[0m - Ensure only modern TLS protocols are used (Automated)"
-grep -ir ssl_protocol /etc/nginx
+grep -ir ssl_protocol /etc/nginx | grep 'v1\s'
+if [[ "$?" = '0' ]]
+then
+	echo -e "\e[31mFAILURE\e[0m\nTLS 1.0 is enabled"
+	failed
+	echo -e "Remediation: Run the following commands to change your ssl_protocols if they are already configured. This remediation advice assumes your nginx configuration file does not include server configuration outside of /etc/nginx/nginx.conf. You may have to also inspect the include files in your nginx.conf to ensure this is properly implemented. Web Server: sed -i <s/ssl_protocols[^;]*;/ssl_protocols TLSv1.2 TLSv1.3;/> /etc/nginx/nginx.conf Proxy: sed -i <s/proxy_ssl_protocols[^;]*;/proxy_ssl_protocols TLSv1.2 TLSv1.3;/> /etc/nginx/nginx.confIf your ssl_protocols are not already configured, this can be accomplished manually by opening your web server or proxy server configuration file and manually adding the directives. Web Server: server { ssl_protocols TLSv1.2 TLSv1.3; } Proxy: location / { proxy_pass cisecurity.org; proxy_ssl_protocols TLSv1.2 TLSv1.3; }\n"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nTLS 1.0 is disabled\n"
+	passed
+fi
+
+grep -ir ssl_protocol /etc/nginx | grep 'v1.1\s'
+if [[ "$?" = '0' ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nTLS 1.1 is enabled"
+        failed
+        echo -e "Remediation: Run the following commands to change your ssl_protocols if they are already configured. This remediation advice assumes your nginx configuration file does not include server configuration outside of /etc/nginx/nginx.conf. You may have to also inspect the include files in your nginx.conf to ensure this is properly implemented. Web Server: sed -i <s/ssl_protocols[^;]*;/ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;/> /etc/nginx/nginx.conf Proxy: sed -i <s/proxy_ssl_protocols[^;]*;/proxy_ssl_protocols TLSv1.2 TLSv1.3;/> /etc/nginx/nginx.confIf your ssl_protocols are not already configured, this can be accomplished manually by opening your web server or proxy server configuration file and manually adding the directives. Web Server: server { ssl_protocols TLSv1.2 TLSv1.3; } Proxy: location / { proxy_pass cisecurity.org; proxy_ssl_protocols TLSv1.2 TLSv1.3; }"
+else
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nTLS 1.1 is disabled"
+	passed
+fi
 
 #4.1.5 Disable weak ciphers (Manual)
 
