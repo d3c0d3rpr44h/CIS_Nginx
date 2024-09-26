@@ -10,7 +10,6 @@
 
 #x.x.x - shows the section number along with the benchmark check
 
-
 echo -ne "\n########## Running the NGINX CIS Checker ##########"
 
 #Check admin rights for script execution
@@ -292,7 +291,7 @@ fi
 #2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
 echo -e "\n\e[4mCIS 2.4.4\e[0m - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
 a=$(grep -ir send_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
-if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
+if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" -ne '' ) ]]
 then
         echo -e "\e[38;5;42mSUCCESS\e[39m\nThe send_timeout directive is set to $a"
         passed
@@ -412,7 +411,7 @@ fi
 #4.1.4 Ensure only modern TLS protocols are used (Automated)
 echo -e "\n\e[4mCIS 4.1.4\e[0m - Ensure only modern TLS protocols are used (Automated)"
 grep -ir ssl_protocol /etc/nginx | grep 'v1\s'
-if [[ "$?" = '0' ]]
+if [[ "$?" == '0' ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nTLS 1.0 is enabled"
 	failed
@@ -423,7 +422,7 @@ else
 fi
 
 grep -ir ssl_protocol /etc/nginx | grep 'v1.1\s'
-if [[ "$?" = '0' ]]
+if [[ "$?" == '0' ]]
 then
         echo -e "\e[31mFAILURE\e[0m\nTLS 1.1 is enabled"
         failed
@@ -438,18 +437,54 @@ fi
 #4.1.6 Ensure custom Diffie-Hellman parameters are used (Automated)
 echo -e "\n\e[4mCIS 4.1.6\e[0m - Ensure custom Diffie-Hellman parameters are used (Automated)"
 grep ssl_dhparam /etc/nginx/nginx.conf
+if [[ "$?" -ne 0 ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nCustom Diffie-Hellman parameters are not used"
+        failed
+	echo -e "Generate strong DHE (Ephemeral Diffie-Hellman) parameters using the following commands: mkdir /etc/nginx/ssl openssl dhparam -out /etc/nginx/ssl/dhparam.pem 2048 chmod 400 /etc/nginx/ssl/dhparam.pem Alter the server configuration to use the new parameters:http { server { ssl_dhparam /etc/nginx/ssl/dhparam.pem;} }"
+else
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nCustom Diffie-Hellman parameters are used"
+        passed
+fi
 
 #4.1.7 Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)
 echo -e "\n\e[4mCIS 4.1.7\e[0m - Ensure Online Certificate Status Protocol (OCSP) stapling is enabled (Automated)"
-grep -ir ssl_stapling /etc/nginx
+a=$(grep -ir ssl_stapling /etc/nginx)
+if [[ ( "$a" =~ 'on' ) && ! ( "$a" =~ 'off' ) ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nDirective ssl_stapling is enabled"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nDirectives for ssl_stapling are not enabled"
+	failed
+	echo -e "Remediation: Follow this procedure to enable OCSP validation: Step 1: Ensure your NGINX server has access to your CA's OCSP server. Your CA's OCSP server may be found on your CA's website and will vary depending on your CA vendor. Issue the following command in order to check your connectivity to their site: curl -I "insert certificate authority ocsp server here" If you get a 200 code response, your server has access. Step 2: Enable OCSP on nginx. Implement the ssl_stapling and ssl_stapling_verify directives. The directive ssl_stapling enables OCSP stapling, and the directive ssl_stapling_verify enables verification of the OCSP responses on nginx. server { ssl_stapling on; ssl_stapling_verify on;}"
+fi
 
 #4.1.8 Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)
 echo -e "\n\e[4mCIS 4.1.8\e[0m - Ensure HTTP Strict Transport Security (HSTS) is enabled (Automated)"
 grep -ir Strict-Transport-Security /etc/nginx
+if [[ ( "$a" -ne 0) ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nHTTP Strict Transport Security (HSTS) is enabled"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nHTTP Strict Transport Security (HSTS) is not enabled"
+	failed
+	echo -e "Remediation: Ensure the below snippet of code can be found in your server configuration for your proxy or web server. This will ensure the HSTS header is set with a validity period of six months, or 15768000 seconds.server { add_header Strict-Transport-Security <max-age=15768000;> always;}"
+fi
 
 #4.1.9 Ensure upstream server traffic is authenticated with a client certificate (Automated)
 echo -e "\n\e[4mCIS 4.1.9\e[0m - Ensure upstream server traffic is authenticated with a client certificate (Automated)"
-grep -ir proxy_ssl_certificate /etc/nginx
+a=$(grep -ir proxy_ssl_certificate /etc/nginx)
+if [[ ( "$a" -ne 0) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nUpstream server traffic is authenticated with a client certificate"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nUpstream server traffic is not authenticated with a client certificate"
+        failed
+        echo -e "Remediation:In order to implement this recommendation, you must create a client certificate to be authenticated against and have it signed. Once you have a signed certificate, place the certificate in a location of your choice. In the below example, we use /etc/nginx/ssl/cert.pem. Implement the configuration as part of the location block: proxy_ssl_certificate /etc/nginx/ssl/nginx.pem; proxy_ssl_certificate_key /etc/nginx/ssl/nginx.key; "
+fi
 
 #4.1.10 Ensure the upstream traffic server certificate is trusted (Manual)
 
@@ -457,11 +492,29 @@ grep -ir proxy_ssl_certificate /etc/nginx
 
 #4.1.12 Ensure session resumption is disabled to enable perfect forward security (Automated)
 echo -e "\n\e[4mCIS 4.1.12\e[0m - Ensure session resumption is disabled to enable perfect forward security (Automated)"
-grep -ir ssl_session_tickets /etc/nginx
+a=$(grep -ir ssl_session_tickets /etc/nginx)
+if [[ "$a" =~ 'off' ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nSession resumption is disabled"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nSession resumption is not disabled"
+	failed
+	echo -e "Remediation: Turn off the ssl_session_tickets directive as part of any server block in your nginx configuration: ssl_session_tickets off;"
+fi
 
 #4.1.13 Ensure HTTP/2.0 is used (Automated)
-echo -e "\n\e[4mCIS 4.1.12\e[0m - Ensure session resumption is disabled to enable perfect forward security (Automated)"
-grep -ir http2 /etc/nginx
+echo -e "\n\e[4mCIS 4.1.13\e[0m - Ensure HTTP/2.0 is used (Automated)"
+a=$(grep -ir http2 /etc/nginx)
+if [[ ( "$?" -ne 0 ) || ( "$a" =~ '#' ) ]]
+then
+        echo -e "\e[31mFAILURE\e[0m\nHTTP/2.0 is not used"
+        failed
+        echo -e "Remediation: Open the nginx server configuration file and configure all listening ports with http2, similar to that of this example:server { listen 443 ssl http2; }"
+else
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nHTTP/2.0 is used"
+        passed
+fi
 
 #4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)
 echo -e "\n\e[4mCIS 4.1.14\e[0m - Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)"
