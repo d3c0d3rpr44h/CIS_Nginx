@@ -1,10 +1,10 @@
 #bin/bash
 echo -ne "\n######## Updating package Repository ########\n"
-sudo dnf update
+sudo apt update
 
 echo -ne "\n######## Installing Nginx ########\n"
-sudo dnf install nginx -y
-sudo dnf auto-remove
+sudo apt install nginx -y
+sudo apt auto-remove
 
 echo -ne "\nTry opening Ubuntu_IP:80. \nYou should see default Nginx Welcome Page\n"
 
