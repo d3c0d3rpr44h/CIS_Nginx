@@ -517,9 +517,6 @@ else
 fi
 
 #4.1.14 Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)
-echo -e "\n\e[4mCIS 4.1.14\e[0m - Ensure only Perfect Forward Secrecy Ciphers are Leveraged (Manual)"
-grep -ir ssl_ciphers /etc/nginx/
-grep -ir proxy_ssl_ciphers /etc/nginx
 
 #5.1.1 Ensure allow and deny filters limit access to specific IP addresses (Manual)
 
@@ -527,15 +524,44 @@ grep -ir proxy_ssl_ciphers /etc/nginx
 
 #5.2.1 Ensure timeout values for reading the client header and body are set correctly (Automated)
 echo -e "\n\e[4mCIS - 5.2.1\e[0m Ensure timeout values for reading the client header and body are set correctly (Automated)"
-grep -ir timeout /etc/nginx
+a=$(grep -ir timeout /etc/nginx)
+echo "$a"
+if [[ (( "$?" == '0' ) && ! ( "$a" =~ '#' )) && (( "$a" =~ '^\sclient_body_timeout\s+' ) || ( "$a" =~ '^\sclient_header_timeout\s+' )) ]]
+then
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nClient header and body are set correctly"
+	passed
+else
+	echo -e "\e[31mFAILURE\e[0m\nClient header and body are not set correctly"
+	failed
+	echo -e "Remediation: Find the HTTP or server block of your nginx configuration and add the client_header_timeout and client_body_timeout directives set to the configuration. The below example sets the timeouts to 10 seconds. client_body_timeout 10; client_header_timeout 10;"
+fi
 
 #5.2.2 Ensure the maximum request body size is set correctly (Automated)
 echo -e "\n\e[4mCIS 5.2.2\e[0m - Ensure the maximum request body size is set correctly (Automated)"
-grep -ir client_max_body_size /etc/nginx
+a=$(grep -ir client_max_body_size /etc/nginx)
+echo "$a"
+if [[ ( "$?" == '0' ) && ! ( "$a" =~ '#' ) && ( "$a" =~ 'client_max_body_size' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nMaximum request body size is set correctly"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nMaximum request body size is not set correctly"
+        failed
+        echo -e "Remediation: Find the HTTP or server block of your nginx configuration and add the client_max_body_size set to 100K in this block. The appropriate value may be different based on your application's needs. client_max_body_size 100K;"
+fi
 
 #5.2.3 Ensure the maximum buffer size for URIs is defined (Automated)
 echo -e "\n\e[4mCIS 5.2.3\e[0m - Ensure the maximum buffer size for URIs is defined (Automated)"
-grep -ir large_client_header_buffers /etc/nginx/
+a=$(grep -ir large_client_header_buffers /etc/nginx/)
+if [[ ( "$?" == '0' ) && ! ( "$a" =~ '#' ) && ( "$a" =~ 'large_client_header_buffers' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nMaximum buffer size for URIs is defined"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nMaximum buffer size for URIs is not defined"
+        failed
+        echo -e "Remediation: Open your nginx.conf file and locate your server or HTTP blocks. This may be added to the HTTP block for all configurations or the server block for more specific configurations to meet your needs. Add the below line to implement this recommendation: large_client_header_buffers 2 1k;"
+fi
 
 #5.2.4 Ensure the number of connections per IP address is limited (Manual)
 
@@ -543,11 +569,29 @@ grep -ir large_client_header_buffers /etc/nginx/
 
 #5.3.1 Ensure X-Frame-Options header is configured and enabled (Automated)
 echo -e "\n\e[4mCIS 5.3.1\e[0m - Ensure X-Frame-Options header is configured and enabled (Automated)"
-grep -ir X-Frame-Options /etc/nginx
+a=$(grep -ir X-Frame-Options /etc/nginx)
+if [[ ( "$?" == '0' ) && ! ( "$a" =~ '#' ) && ( "$a" =~ 'X-Frame-Options' ) && ( "$a" =~ '"SAMEORIGIN" always' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nX-Frame-Options header is configured and enabled"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nX-Frame-Options header is not configured and enabled"
+        failed
+        echo -e "Remediation: Add the below to your server blocks in your nginx configuration. The policy should be configured to meet your organization's needs. add_header X-Frame-Options <SAMEORIGIN> always;"
+fi
 
 #5.3.2 Ensure X-Content-Type-Options header is configured and enabled (Automated)
 echo -e "\n\e[4mCIS 5.3.2\e[0m - Ensure X-Content-Type-Options header is configured and enabled (Automated)"
-grep -ir X-Content-Type-Options /etc/nginx
+a=$(grep -ir X-Content-Type-Options /etc/nginx)
+if [[ ( "$?" == '0' ) && ! ( "$a" =~ '#' ) && ( "$a" =~ 'X-Content-Type-Options' ) && ( "$a" =~ '"nosniff" always' ) ]]
+then
+        echo -e "\e[38;5;42mSUCCESS\e[39m\nX-Content-Type-Options header is configured and enabled"
+        passed
+else
+        echo -e "\e[31mFAILURE\e[0m\nX-Content-Type-Options header is not configured and enabled"
+        failed
+        echo -e "Remediation: "
+fi
 
 #5.3.3 Ensure that Content Security Policy (CSP) is enabled and configured properly (Manual)
 
