@@ -27,8 +27,9 @@ fi
 checkid
 
 #Check if OS is Ubuntu based
-echo -e "\n\n(Checking if OS is Ubuntu)"
+
 checkos() {
+echo -e "\n\n(Checking if OS is Ubuntu)"
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
 if [[ ( "${OS}" != 'Ubuntu' ) && ( "${OS}" != 'ubuntu' ) && ( "${OS}" != 'UBUNTU' ) ]]
 then
@@ -66,7 +67,7 @@ if  [[ "${?}" -ne 0 ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nNginx is not installed on this server"
 	failed
-	exit 1
+  exit 1
 else
 	echo -e "\e[38;5;42mSUCCESS\e[39m\nNginx is installed"
 	passed
