@@ -30,7 +30,7 @@ checkid
 echo -e "\n\n(Checking if OS is Ubuntu)"
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
-if [[ ( "${OS}" -ne 'Ubuntu' ) && ( "${OS}" -ne 'ubuntu' ) && ( "${OS}" -ne 'UBUNTU' ) ]]
+if [[ ( "${OS}" != 'Ubuntu' ) && ( "${OS}" != 'ubuntu' ) && ( "${OS}" != 'UBUNTU' ) ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
 	exit 1
@@ -61,7 +61,7 @@ echo -e "\e[1mCIS Compliance Percentage: $percent%\e[0m"
 
 #1.1.1- Ensure NGINX is installed (Automated)
 echo -e "\n\e[4mCIS 1.1.1\e[0m - Ensure NGINX is installed (Automated)"
-nginx -v 
+nginx -v
 if  [[ "${?}" -ne 0 ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nNginx is not installed on this server"
@@ -168,25 +168,24 @@ shell()
 {
 	l_output="" l_output2="" l_out=""
 	if [ -f /etc/nginx/nginx.conf ]; then
-	l_user="$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf |
-	sed -r 's/;.*//g')"
-	l_valid_shells="^($( sed -rn '/^\//{s,/,\\\\/,g;p}' /etc/shells | paste -s -d '|' - ))$"
-	l_out="$(awk -v pat="$l_valid_shells" -v ngusr="$l_user" -F: '($(NF) ~pat && $1==ngusr) { $(NF-1) }' /etc/passwd)"
+		l_user="$(awk '$1~/^\s*user\s*$/ {print $2}' /etc/nginx/nginx.conf | sed -r 's/;.*//g')"
+		l_valid_shells="^($( sed -rn '/^\//{s,/,\\\\/,g;p}' /etc/shells | paste -s -d '|' - ))$"
+		l_out="$(awk -v pat="$l_valid_shells" -v ngusr="$l_user" -F: '($(NF) ~pat && $1==ngusr) { $(NF-1) }' /etc/passwd)"
 	if [ -z "$l_out" ]; then
-	l_output=" - NGINX user account: \"$l_user\" has an invalid shell"
+		l_output=" - NGINX user account: \"$l_user\" has an invalid shell"
 	else
-	l_output2=" - NGINX user account: \"$l_user\" has a valid shell:\"$l_out\""
+		l_output2=" - NGINX user account: \"$l_user\" has a valid shell:\"$l_out\""
 	fi
 	else
-	l_output2=" - NGINX user account can not be determined.\n - file:\"/etc/nginx/nginx.conf\" is missing"
+		l_output2=" - NGINX user account can not be determined.\n - file:\"/etc/nginx/nginx.conf\" is missing"
 	fi
 	if [ -z "$l_output2" ]; then
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service account $l_user has an invalid shell"
-	passed
+		echo -e "\e[38;5;42mSUCCESS\e[39m\nNGINX service account $l_user has an invalid shell"
+	  	passed
 	else
-	echo -e "\e[31mFAILURE\e[0m\n - Reason(s) for auditfailure:\n$l_output2\n"
-	failed
-	echo -e "Remediation: Remediation: Change the login shell for the nginx account to /sbin/nologin by using the following command: usermod -s /sbin/nologin $l_user"
+		echo -e "\e[31mFAILURE\e[0m\n - Reason(s) for auditfailure:\n$l_output2\n"
+		failed
+		echo -e "Remediation: Remediation: Change the login shell for the nginx account to /sbin/nologin by using the following command: usermod -s /sbin/nologin $l_user"
 	fi
 }
 shell
@@ -325,7 +324,7 @@ then
 	failed
 	echo -e "Remediation: Edit /usr/share/nginx/html/index.html and usr/share/nginx/html/50x.html and remove any lines that reference NGINX."
 else
-	echo -e "\e[38;5;42mSUCCESS\e[39m\nDefault error and index.html pages do not reference NGINX " 
+	echo -e "\e[38;5;42mSUCCESS\e[39m\nDefault error and index.html pages do not reference NGINX "
 	passed
 fi
 
