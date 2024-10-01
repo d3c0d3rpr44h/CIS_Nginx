@@ -38,7 +38,7 @@ else
 	echo -e "\e[38;5;42mSUCCESS\e[39m"
 fi
 }
-#checkos
+checkos
 
 echo -e "\n##### Evaluating the NGINX Server against CIS Benchmarks ######"
 pass=0
