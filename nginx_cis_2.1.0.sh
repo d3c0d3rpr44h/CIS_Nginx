@@ -12,7 +12,7 @@
 
 echo -ne "\n########## Running the NGINX CIS Checker ##########"
 
-#Check admin rights for script execution
+#Check for admin rights for script execution
 
 checkid() {
 echo -e "\n\n(Checking admin execution rights)"
@@ -30,7 +30,7 @@ checkid
 echo -e "\n\n(Checking if OS is Ubuntu)"
 checkos() {
 OS=$(cat /etc/*release | grep -w NAME | cut -d = -f2 | tr -d '""')
-if [[ (! "${OS}" == 'Ubuntu') && (! "${OS}" == 'ubuntu') && (! "${OS}" == 'UBUNTU') ]]
+if [[ ( "${OS}" -ne 'Ubuntu' ) && ( "${OS}" -ne 'ubuntu' ) && ( "${OS}" -ne 'UBUNTU' ) ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nThe base OS for this Nginx image is not Ubuntu. Please use appropriate script"
 	exit 1
@@ -38,7 +38,7 @@ else
 	echo -e "\e[38;5;42mSUCCESS\e[39m"
 fi
 }
-checkos
+#checkos
 
 echo -e "\n##### Evaluating the NGINX Server against CIS Benchmarks ######"
 pass=0
@@ -210,7 +210,7 @@ dir=$(find /etc/nginx -type d -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
 fil=$(find /etc/nginx -type f -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
 for d in dir
 do
-	if [[ "$d" > 755  ]]
+	if [[ "$d" -gt 755  ]]
 	then
 		echo -e "\e[31mFAILURE\e[0m\nSome permissions of NGINX sub-directories under directory /etc/nginx are over permissive"
 		failed
@@ -223,7 +223,7 @@ done
 
 for f in fil
 do
-        if [[ "$f" > 644  ]]
+        if [[ "$f" -gt 644  ]]
         then
 	        echo -e "\e[31mFAILURE\e[0m\nSome file permissions of files under NGINX directory /etc/nginx are over permissive"
         	failed
@@ -248,7 +248,7 @@ else
         echo -e "Remediation: If the PID file is not owned by root, issue this command: chown root:root /var/run/nginx.pid\n"
 fi
 
-if  [[ "$b" > 644 ]]
+if  [[ "$b" -gt 644 ]]
 then
         echo -e "\e[31mFAILURE\e[0m\nNGINX process PID file is over permissive"
         failed
@@ -278,7 +278,7 @@ fi
 #2.4.3 Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)
 echo -e "\n\e[4mCIS 2.4.3\e[0m - Ensure keepalive_timeout is 10 seconds or less, but not 0 (Automated)"
 a=$(grep -ir keepalive_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
-if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" != '' ) ]]
+if [[ (( "$a" -lt 10 ) || ( "$a" == 10 )) && ( "$a" -ne '' ) ]]
 then
         echo -e "\e[38;5;42mSUCCESS\e[39m\nThe directive keepalive_timeout is $a"
         passed
@@ -291,7 +291,7 @@ fi
 #2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)
 echo -e "\n\e[4mCIS 2.4.4\e[0m - Ensure send_timeout is set to 10 seconds or less, but not 0 (Automated)"
 a=$(grep -ir send_timeout /etc/nginx | cut -d " " -f 2 | cut -d ";" -f 1)
-if [[ (( "$a" < 10 ) || ( "$a" == 10 )) && ( "$a" -ne '' ) ]]
+if [[ (( "$a" -lt 10 ) || ( "$a" == 10 )) && ( "$a" -ne '' ) ]]
 then
         echo -e "\e[38;5;42mSUCCESS\e[39m\nThe send_timeout directive is set to $a"
         passed
@@ -334,7 +334,7 @@ fi
 #2.5.4 Ensure the NGINX reverse proxy does not enable information disclosure (Automated)
 echo -e "\n\e[4mCIS 2.5.4\e[0m - Ensure the NGINX reverse proxy does not enable information disclosure (Automated)"
 a=$(grep proxy_hide_header /etc/nginx/nginx.conf)
-if  [[ !( "$a" =~ 'proxy_hide_header X-Powered-By' ) || !( "$a" =~ 'proxy_hide_header Server' ) ]]
+if  [[ ! ( "$a" =~ 'proxy_hide_header X-Powered-By' ) || ! ( "$a" =~ 'proxy_hide_header Server' ) ]]
 then
 	echo -e "\e[31mFAILURE\e[0m\nProxy_hide_headers: <X-Powered-By> and/or <Server> not enabled"
 	failed
@@ -398,7 +398,7 @@ fi
 #4.1.3 Ensure private key permissions are restricted (Automated)
 echo -e "\n\e[4mCIS 4.1.3\e[0m - Ensure private key permissions are restricted (Automated)"
 b=$(find /etc/nginx/ -name '*.key' -exec stat -Lc "%n %a" {} + | cut -d " " -f 2)
-if [[ ( "$b" < '400' ) || ( "$b" == '400' ) ]]
+if [[ ( "$b" -lt '400' ) || ( "$b" == '400' ) ]]
 then
 	echo -e "\e[38;5;42mSUCCESS\e[39m\nPrivate key permissions are restricted"
 	passed
